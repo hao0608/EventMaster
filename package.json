@@ -1,0 +1,14 @@
+{
+  "name": "event-master-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Event Master Registration System - Monorepo",
+  "scripts": {
+    "web:dev": "cd apps/web && npm run dev",
+    "web:build": "cd apps/web && npm run build",
+    "web:preview": "cd apps/web && npm run preview"
+  },
+  "workspaces": [
+    "apps/*"
+  ]
+}
