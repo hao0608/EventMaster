@@ -36,7 +36,7 @@ export const Navbar: React.FC = () => {
               {/* Organizer Links */}
               {(user.role === UserRole.ORGANIZER || user.role === UserRole.ADMIN) && (
                 <Link to="/organizer/verify" className="bg-indigo-700 hover:bg-indigo-800 px-3 py-2 rounded-md text-sm font-medium border border-indigo-500">
-                  <i className="fa-solid fa-qrcode mr-2"></i>Verify
+                  <i className="fa-solid fa-clipboard-check mr-2"></i>Check-in Console
                 </Link>
               )}
 

@@ -108,6 +108,55 @@ export const mockApi = {
     return newReg;
   },
 
+  // WALK-IN REGISTRATION (New Feature)
+  walkInRegister: async (eventId: string, email: string, displayName: string): Promise<CheckInResult> => {
+    await delay(800);
+    
+    const event = MOCK_EVENTS.find(e => e.id === eventId);
+    if (!event) throw new Error('Event not found');
+
+    // 1. Find or Create User
+    let user = MOCK_USERS.find(u => u.email === email);
+    if (!user) {
+      user = {
+        id: `u${Date.now()}`,
+        email,
+        displayName: displayName || email.split('@')[0],
+        role: UserRole.MEMBER
+      };
+      MOCK_USERS.push(user);
+    }
+
+    // 2. Check existing registration
+    let reg = MOCK_REGISTRATIONS.find(r => r.eventId === eventId && r.userId === user!.id);
+    
+    if (reg) {
+      // If already registered but not checked in, check them in
+      if (reg.status === RegistrationStatus.CHECKED_IN) {
+        return { success: false, message: 'User already checked in.', registration: reg };
+      }
+      reg.status = RegistrationStatus.CHECKED_IN;
+      return { success: true, message: 'Existing registration found. Checked in successfully!', registration: reg };
+    }
+
+    // 3. Create new Registration
+    const newReg: Registration = {
+      id: `r${Date.now()}`,
+      eventId,
+      userId: user.id,
+      eventTitle: event.title,
+      eventStartAt: event.startAt,
+      status: RegistrationStatus.CHECKED_IN, // Immediate check-in
+      qrCode: `QR-${eventId}-${user.id}-WALKIN`,
+      createdAt: new Date().toISOString()
+    };
+
+    MOCK_REGISTRATIONS.push(newReg);
+    event.registeredCount += 1;
+
+    return { success: true, message: 'Walk-in Registered & Checked In!', registration: newReg };
+  },
+
   getMyRegistrations: async (userId: string): Promise<Registration[]> => {
     await delay(400);
     return MOCK_REGISTRATIONS.filter(r => r.userId === userId);

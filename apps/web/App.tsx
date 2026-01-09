@@ -47,7 +47,7 @@ const App: React.FC = () => {
                 <OrganizerVerify />
               </ProtectedRoute>
             } />
-
+            
             {/* Protected: Admin */}
             <Route path="/admin/create-event" element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>

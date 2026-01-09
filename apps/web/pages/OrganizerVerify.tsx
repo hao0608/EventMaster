@@ -1,91 +1,245 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { mockApi } from '../services/mockApi';
-import { CheckInResult } from '../types';
+import { CheckInResult, Event } from '../types';
 
 export const OrganizerVerify: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'verify' | 'walkin'>('verify');
+  
+  // --- Common Data ---
+  const [events, setEvents] = useState<Event[]>([]);
+  
+  // --- Verify State ---
   const [inputCode, setInputCode] = useState('');
-  const [result, setResult] = useState<CheckInResult | null>(null);
-  const [checking, setChecking] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<CheckInResult | null>(null);
+  const [verifying, setVerifying] = useState(false);
 
+  // --- Walk-in State ---
+  const [selectedEventId, setSelectedEventId] = useState('');
+  const [walkInEmail, setWalkInEmail] = useState('');
+  const [walkInName, setWalkInName] = useState('');
+  const [walkInResult, setWalkInResult] = useState<CheckInResult | null>(null);
+  const [registering, setRegistering] = useState(false);
+
+  useEffect(() => {
+    // Load events for Walk-in dropdown
+    mockApi.getEvents().then(data => {
+      setEvents(data);
+      if (data.length > 0) setSelectedEventId(data[0].id);
+    });
+  }, []);
+
+  // --- Verify Handler ---
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputCode.trim()) return;
 
-    setChecking(true);
-    setResult(null);
+    setVerifying(true);
+    setVerifyResult(null);
 
     try {
       const res = await mockApi.verifyTicket(inputCode);
-      setResult(res);
+      setVerifyResult(res);
       if (res.success) {
-        setInputCode(''); // Clear on success for next scan
+        setInputCode(''); 
       }
     } catch (error) {
-      setResult({ success: false, message: 'System Error during verification.' });
+      setVerifyResult({ success: false, message: 'System Error during verification.' });
     } finally {
-      setChecking(false);
+      setVerifying(false);
+    }
+  };
+
+  // --- Walk-in Handler ---
+  const handleWalkIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedEventId || !walkInEmail) return;
+
+    setRegistering(true);
+    setWalkInResult(null);
+
+    try {
+      const res = await mockApi.walkInRegister(selectedEventId, walkInEmail, walkInName);
+      setWalkInResult(res);
+      if (res.success) {
+        setWalkInEmail('');
+        setWalkInName('');
+      }
+    } catch (error) {
+      setWalkInResult({ success: false, message: 'Walk-in registration failed.' });
+    } finally {
+      setRegistering(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Ticket Verification</h1>
+    <div className="max-w-xl mx-auto px-4 py-8">
+      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Check-in Console</h1>
       
-      <div className="bg-white rounded-lg shadow-lg p-6">
-        <form onSubmit={handleVerify}>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Scan or Enter Token Code
-            </label>
-            <div className="relative">
-              <input 
-                type="text" 
-                value={inputCode}
-                onChange={(e) => setInputCode(e.target.value)}
-                placeholder="QR-..."
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                autoFocus
-              />
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <i className="fa-solid fa-qrcode text-gray-400"></i>
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setActiveTab('verify')}
+          className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm focus:outline-none ${
+            activeTab === 'verify'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          <i className="fa-solid fa-qrcode mr-2"></i>
+          Scan / Verify Ticket
+        </button>
+        <button
+          onClick={() => setActiveTab('walkin')}
+          className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm focus:outline-none ${
+            activeTab === 'walkin'
+              ? 'border-indigo-500 text-indigo-600'
+              : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          <i className="fa-solid fa-user-plus mr-2"></i>
+          Walk-in / Manual
+        </button>
+      </div>
+      
+      <div className="bg-white rounded-lg shadow-lg p-6 min-h-[400px]">
+        
+        {/* === VERIFY TAB === */}
+        {activeTab === 'verify' && (
+          <div>
+            <form onSubmit={handleVerify}>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ticket Code (Scan QR)
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={inputCode}
+                    onChange={(e) => setInputCode(e.target.value)}
+                    placeholder="QR-..."
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                    autoFocus
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <i className="fa-solid fa-qrcode text-gray-400"></i>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-          <button 
-            type="submit"
-            disabled={checking || !inputCode}
-            className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-gray-300"
-          >
-            {checking ? 'Verifying...' : 'Verify Ticket'}
-          </button>
-        </form>
+              <button 
+                type="submit"
+                disabled={verifying || !inputCode}
+                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-gray-300"
+              >
+                {verifying ? 'Verifying...' : 'Verify Ticket'}
+              </button>
+            </form>
 
-        {/* Results Area */}
-        {result && (
-          <div className={`mt-6 p-4 rounded-lg border text-center animate-pulse-once ${result.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-             <div className="mb-2">
-               {result.success ? (
-                 <i className="fa-solid fa-circle-check text-4xl text-green-500"></i>
-               ) : (
-                 <i className="fa-solid fa-circle-xmark text-4xl text-red-500"></i>
-               )}
-             </div>
-             <h3 className={`text-lg font-bold ${result.success ? 'text-green-800' : 'text-red-800'}`}>
-               {result.message}
-             </h3>
-             {result.registration && (
-               <div className="mt-2 text-sm text-gray-600">
-                 <p>Attendee: <span className="font-semibold">User {result.registration.userId}</span></p>
-                 <p>Event: {result.registration.eventTitle}</p>
-               </div>
-             )}
+            {/* Verify Results */}
+            {verifyResult && (
+              <div className={`mt-6 p-4 rounded-lg border text-center animate-pulse-once ${verifyResult.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                 <div className="mb-2">
+                   {verifyResult.success ? (
+                     <i className="fa-solid fa-circle-check text-4xl text-green-500"></i>
+                   ) : (
+                     <i className="fa-solid fa-circle-xmark text-4xl text-red-500"></i>
+                   )}
+                 </div>
+                 <h3 className={`text-lg font-bold ${verifyResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                   {verifyResult.message}
+                 </h3>
+                 {verifyResult.registration && (
+                   <div className="mt-2 text-sm text-gray-600">
+                     <p>Attendee: <span className="font-semibold">User {verifyResult.registration.userId}</span></p>
+                     <p>Event: {verifyResult.registration.eventTitle}</p>
+                   </div>
+                 )}
+              </div>
+            )}
           </div>
         )}
-      </div>
 
+        {/* === WALK-IN TAB === */}
+        {activeTab === 'walkin' && (
+          <div>
+            <form onSubmit={handleWalkIn} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select Event</label>
+                <select
+                  value={selectedEventId}
+                  onChange={(e) => setSelectedEventId(e.target.value)}
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                >
+                  {events.map(event => (
+                    <option key={event.id} value={event.id}>
+                      {event.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={walkInEmail}
+                  onChange={(e) => setWalkInEmail(e.target.value)}
+                  placeholder="user@example.com"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
+                <input
+                  type="text"
+                  value={walkInName}
+                  onChange={(e) => setWalkInName(e.target.value)}
+                  placeholder="John Doe"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={registering || !selectedEventId || !walkInEmail}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none disabled:bg-gray-300 transition"
+              >
+                {registering ? 'Processing...' : 'Register & Check In'}
+              </button>
+            </form>
+
+            {/* Walk-in Results */}
+            {walkInResult && (
+              <div className={`mt-6 p-4 rounded-lg border text-center animate-pulse-once ${walkInResult.success ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
+                 <div className="mb-2">
+                   {walkInResult.success ? (
+                     <i className="fa-solid fa-check-double text-4xl text-green-500"></i>
+                   ) : (
+                     <i className="fa-solid fa-triangle-exclamation text-4xl text-yellow-500"></i>
+                   )}
+                 </div>
+                 <h3 className={`text-lg font-bold ${walkInResult.success ? 'text-green-800' : 'text-yellow-800'}`}>
+                   {walkInResult.message}
+                 </h3>
+                 {walkInResult.registration && (
+                   <div className="mt-2 text-sm text-gray-600">
+                     <p className="font-semibold">{walkInResult.registration.eventTitle}</p>
+                   </div>
+                 )}
+              </div>
+            )}
+          </div>
+        )}
+
+      </div>
+      
       <div className="mt-8 text-center text-sm text-gray-500">
-        <p>Tip: In a real app, this would access the device camera for QR scanning.</p>
-        <p className="mt-2 text-xs">Test Codes: Look at "My Tickets" to get valid codes.</p>
+         {activeTab === 'verify' ? (
+             <p>Use this tab for attendees with existing QR codes.</p>
+         ) : (
+             <p>Use this tab for people who need to register on the spot.</p>
+         )}
       </div>
     </div>
   );
