@@ -43,7 +43,7 @@ export const OrganizerVerify: React.FC = () => {
         setInputCode(''); 
       }
     } catch (error) {
-      setVerifyResult({ success: false, message: 'System Error during verification.' });
+      setVerifyResult({ success: false, message: '驗票系統發生錯誤' });
     } finally {
       setVerifying(false);
     }
@@ -65,15 +65,27 @@ export const OrganizerVerify: React.FC = () => {
         setWalkInName('');
       }
     } catch (error) {
-      setWalkInResult({ success: false, message: 'Walk-in registration failed.' });
+      setWalkInResult({ success: false, message: '現場報名失敗' });
     } finally {
       setRegistering(false);
     }
   };
 
+  // Helper to translate API messages
+  const translateMessage = (msg: string) => {
+    if (msg.includes('Check-in Successful')) return '簽到成功！';
+    if (msg.includes('Invalid Ticket')) return '無效票券 / 找不到 QR Code';
+    if (msg.includes('Ticket already used')) return '此票券已使用過 (已簽到)';
+    if (msg.includes('Ticket was cancelled')) return '此票券已取消';
+    if (msg.includes('Walk-in Registered')) return '現場報名並簽到成功！';
+    if (msg.includes('Existing registration found')) return '找到現有報名資料，簽到成功！';
+    if (msg.includes('User already checked in')) return '此用戶已經簽到過了。';
+    return msg;
+  };
+
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">Check-in Console</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">驗票控制台 (Check-in)</h1>
       
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">
@@ -86,7 +98,7 @@ export const OrganizerVerify: React.FC = () => {
           }`}
         >
           <i className="fa-solid fa-qrcode mr-2"></i>
-          Scan / Verify Ticket
+          掃描 / 驗票
         </button>
         <button
           onClick={() => setActiveTab('walkin')}
@@ -97,7 +109,7 @@ export const OrganizerVerify: React.FC = () => {
           }`}
         >
           <i className="fa-solid fa-user-plus mr-2"></i>
-          Walk-in / Manual
+          現場報名 / 手動
         </button>
       </div>
       
@@ -109,7 +121,7 @@ export const OrganizerVerify: React.FC = () => {
             <form onSubmit={handleVerify}>
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Ticket Code (Scan QR)
+                  票券代碼 (請掃描 QR)
                 </label>
                 <div className="relative">
                   <input 
@@ -130,7 +142,7 @@ export const OrganizerVerify: React.FC = () => {
                 disabled={verifying || !inputCode}
                 className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-gray-300"
               >
-                {verifying ? 'Verifying...' : 'Verify Ticket'}
+                {verifying ? '驗證中...' : '驗證票券'}
               </button>
             </form>
 
@@ -145,12 +157,12 @@ export const OrganizerVerify: React.FC = () => {
                    )}
                  </div>
                  <h3 className={`text-lg font-bold ${verifyResult.success ? 'text-green-800' : 'text-red-800'}`}>
-                   {verifyResult.message}
+                   {translateMessage(verifyResult.message)}
                  </h3>
                  {verifyResult.registration && (
                    <div className="mt-2 text-sm text-gray-600">
-                     <p>Attendee: <span className="font-semibold">User {verifyResult.registration.userId}</span></p>
-                     <p>Event: {verifyResult.registration.eventTitle}</p>
+                     <p>參加者: <span className="font-semibold">{verifyResult.registration.userId}</span></p>
+                     <p>活動: {verifyResult.registration.eventTitle}</p>
                    </div>
                  )}
               </div>
@@ -163,7 +175,7 @@ export const OrganizerVerify: React.FC = () => {
           <div>
             <form onSubmit={handleWalkIn} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Select Event</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">選擇活動</label>
                 <select
                   value={selectedEventId}
                   onChange={(e) => setSelectedEventId(e.target.value)}
@@ -190,12 +202,12 @@ export const OrganizerVerify: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Name (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">姓名 (選填)</label>
                 <input
                   type="text"
                   value={walkInName}
                   onChange={(e) => setWalkInName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="王小明"
                   className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                 />
               </div>
@@ -205,7 +217,7 @@ export const OrganizerVerify: React.FC = () => {
                 disabled={registering || !selectedEventId || !walkInEmail}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none disabled:bg-gray-300 transition"
               >
-                {registering ? 'Processing...' : 'Register & Check In'}
+                {registering ? '處理中...' : '報名並簽到'}
               </button>
             </form>
 
@@ -220,7 +232,7 @@ export const OrganizerVerify: React.FC = () => {
                    )}
                  </div>
                  <h3 className={`text-lg font-bold ${walkInResult.success ? 'text-green-800' : 'text-yellow-800'}`}>
-                   {walkInResult.message}
+                   {translateMessage(walkInResult.message)}
                  </h3>
                  {walkInResult.registration && (
                    <div className="mt-2 text-sm text-gray-600">
@@ -236,9 +248,9 @@ export const OrganizerVerify: React.FC = () => {
       
       <div className="mt-8 text-center text-sm text-gray-500">
          {activeTab === 'verify' ? (
-             <p>Use this tab for attendees with existing QR codes.</p>
+             <p>此分頁用於掃描參加者已持有的 QR Code。</p>
          ) : (
-             <p>Use this tab for people who need to register on the spot.</p>
+             <p>此分頁用於現場臨時報名，或找不到票券時的手動補登。</p>
          )}
       </div>
     </div>

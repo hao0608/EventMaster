@@ -16,7 +16,7 @@ export const Events: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Upcoming Events</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">近期活動</h1>
       
       {loading ? (
         <div className="flex justify-center py-10">
@@ -46,7 +46,7 @@ export const Events: React.FC = () => {
                   </div>
                   <div className="flex items-center">
                     <i className="fa-solid fa-users w-5 text-indigo-500"></i>
-                    <span>{event.registeredCount} / {event.capacity} Registered</span>
+                    <span>{event.registeredCount} / {event.capacity} 人已報名</span>
                   </div>
                 </div>
 
@@ -54,7 +54,7 @@ export const Events: React.FC = () => {
                   to={`/events/${event.id}`}
                   className="w-full block text-center bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 rounded-md font-medium transition"
                 >
-                  View Details
+                  查看詳情
                 </Link>
               </div>
             </div>

@@ -27,17 +27,17 @@ export const EventDetail: React.FC = () => {
     setRegistering(true);
     try {
       await mockApi.registerForEvent(user.id, event.id);
-      alert('Registration Successful! Redirecting to your tickets...');
+      alert('報名成功！正在跳轉至我的票券...');
       navigate('/my-tickets');
     } catch (err: any) {
-      alert(err.message || 'Failed to register');
+      alert(err.message || '報名失敗');
     } finally {
       setRegistering(false);
     }
   };
 
-  if (loading) return <div className="p-10 text-center">Loading...</div>;
-  if (!event) return <div className="p-10 text-center">Event not found</div>;
+  if (loading) return <div className="p-10 text-center">載入中...</div>;
+  if (!event) return <div className="p-10 text-center">找不到此活動</div>;
 
   const isFull = event.registeredCount >= event.capacity;
 
@@ -52,7 +52,7 @@ export const EventDetail: React.FC = () => {
           <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-6">
             <div className="space-y-4 flex-1">
               <div>
-                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Description</h3>
+                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider">活動描述</h3>
                 <p className="mt-1 text-gray-900 leading-relaxed">{event.description}</p>
               </div>
               
@@ -62,7 +62,7 @@ export const EventDetail: React.FC = () => {
                      <i className="fa-regular fa-calendar"></i>
                    </div>
                    <div>
-                     <p className="text-xs text-gray-500">Date & Time</p>
+                     <p className="text-xs text-gray-500">日期與時間</p>
                      <p className="text-sm font-medium text-gray-900">
                        {new Date(event.startAt).toLocaleDateString()}
                        <br/>
@@ -76,7 +76,7 @@ export const EventDetail: React.FC = () => {
                      <i className="fa-solid fa-location-dot"></i>
                    </div>
                    <div>
-                     <p className="text-xs text-gray-500">Location</p>
+                     <p className="text-xs text-gray-500">地點</p>
                      <p className="text-sm font-medium text-gray-900">{event.location}</p>
                    </div>
                 </div>
@@ -84,11 +84,11 @@ export const EventDetail: React.FC = () => {
             </div>
 
             <div className="w-full md:w-64 bg-gray-50 p-6 rounded-lg border border-gray-200">
-               <h3 className="text-lg font-bold text-gray-900 mb-4">Registration</h3>
+               <h3 className="text-lg font-bold text-gray-900 mb-4">報名資訊</h3>
                
                <div className="mb-4">
                  <div className="flex justify-between text-sm mb-1">
-                   <span>Capacity</span>
+                   <span>剩餘名額</span>
                    <span className="font-medium">{event.registeredCount}/{event.capacity}</span>
                  </div>
                  <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -109,7 +109,7 @@ export const EventDetail: React.FC = () => {
                    }
                  `}
                >
-                 {registering ? 'Processing...' : isFull ? 'Event Full' : 'Register Now'}
+                 {registering ? '處理中...' : isFull ? '已額滿' : '立即報名'}
                </button>
             </div>
           </div>

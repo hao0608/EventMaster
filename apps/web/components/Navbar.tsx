@@ -25,18 +25,18 @@ export const Navbar: React.FC = () => {
             </Link>
             <div className="hidden md:block ml-10 flex items-baseline space-x-4">
               <Link to="/events" className="hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium">
-                Browse Events
+                瀏覽活動
               </Link>
               
               {/* Member Links */}
               <Link to="/my-tickets" className="hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium">
-                My Tickets
+                我的票券
               </Link>
 
               {/* Organizer Links */}
               {(user.role === UserRole.ORGANIZER || user.role === UserRole.ADMIN) && (
                 <Link to="/organizer/verify" className="bg-indigo-700 hover:bg-indigo-800 px-3 py-2 rounded-md text-sm font-medium border border-indigo-500">
-                  <i className="fa-solid fa-clipboard-check mr-2"></i>Check-in Console
+                  <i className="fa-solid fa-clipboard-check mr-2"></i>驗票後台
                 </Link>
               )}
 
@@ -44,10 +44,10 @@ export const Navbar: React.FC = () => {
               {user.role === UserRole.ADMIN && (
                 <>
                   <Link to="/admin/create-event" className="hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium">
-                    Create Event
+                    建立活動
                   </Link>
                   <Link to="/admin/users" className="hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium">
-                    Users & Roles
+                    用戶權限
                   </Link>
                 </>
               )}
@@ -61,7 +61,7 @@ export const Navbar: React.FC = () => {
               onClick={handleLogout}
               className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium transition"
             >
-              Logout
+              登出
             </button>
           </div>
         </div>

@@ -17,11 +17,11 @@ export const Login: React.FC = () => {
         <div className="px-6 py-8">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-extrabold text-gray-900">EventMaster MVP</h2>
-            <p className="mt-2 text-sm text-gray-600">Simulate IAM / SSO Login</p>
+            <p className="mt-2 text-sm text-gray-600">模擬 IAM / SSO 登入系統</p>
           </div>
           
           <div className="space-y-4">
-            <p className="text-xs text-center text-gray-400 uppercase tracking-widest">Select a Persona</p>
+            <p className="text-xs text-center text-gray-400 uppercase tracking-widest">請選擇登入角色</p>
             
             <button
               onClick={() => handleLogin('member@company.com')}
@@ -32,8 +32,8 @@ export const Login: React.FC = () => {
                   <i className="fa-solid fa-user"></i>
                 </div>
                 <div className="text-left">
-                  <div className="font-bold">Member</div>
-                  <div className="text-xs text-gray-500">Can view & register</div>
+                  <div className="font-bold">一般會員 (Member)</div>
+                  <div className="text-xs text-gray-500">瀏覽活動與報名參加</div>
                 </div>
               </div>
               <i className="fa-solid fa-arrow-right text-gray-300"></i>
@@ -48,8 +48,8 @@ export const Login: React.FC = () => {
                   <i className="fa-solid fa-clipboard-check"></i>
                 </div>
                 <div className="text-left">
-                  <div className="font-bold">Organizer</div>
-                  <div className="text-xs text-gray-500">Can verify tickets</div>
+                  <div className="font-bold">主辦方 (Organizer)</div>
+                  <div className="text-xs text-gray-500">掃描 QR Code 進行驗票</div>
                 </div>
               </div>
               <i className="fa-solid fa-arrow-right text-gray-300"></i>
@@ -64,8 +64,8 @@ export const Login: React.FC = () => {
                   <i className="fa-solid fa-shield-halved"></i>
                 </div>
                 <div className="text-left">
-                  <div className="font-bold">Admin</div>
-                  <div className="text-xs text-gray-500">Can manage all</div>
+                  <div className="font-bold">系統管理員 (Admin)</div>
+                  <div className="text-xs text-gray-500">管理所有活動與用戶</div>
                 </div>
               </div>
               <i className="fa-solid fa-arrow-right text-gray-300"></i>
@@ -74,7 +74,7 @@ export const Login: React.FC = () => {
         </div>
         <div className="bg-gray-50 px-6 py-4 text-center">
           <p className="text-xs text-gray-500">
-            In Production: Redirects to Cognito Hosted UI
+            正式環境將導向 Cognito Hosted UI
           </p>
         </div>
       </div>

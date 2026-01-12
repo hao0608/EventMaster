@@ -17,15 +17,25 @@ export const MyTickets: React.FC = () => {
     }
   }, [user]);
 
-  if (loading) return <div className="p-8 text-center">Loading tickets...</div>;
+  // Helper to translate status
+  const getStatusText = (status: RegistrationStatus) => {
+    switch (status) {
+      case RegistrationStatus.REGISTERED: return '已報名';
+      case RegistrationStatus.CHECKED_IN: return '已簽到';
+      case RegistrationStatus.CANCELLED: return '已取消';
+      default: return status;
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center">載入票券中...</div>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">My Tickets</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">我的票券</h1>
       
       {registrations.length === 0 ? (
         <div className="text-center py-12 bg-white rounded-lg shadow">
-          <p className="text-gray-500">You haven't registered for any events yet.</p>
+          <p className="text-gray-500">您目前尚未報名任何活動。</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -36,7 +46,7 @@ export const MyTickets: React.FC = () => {
                 <div className="flex items-center space-x-2 mb-2">
                   <span className={`px-2 py-1 text-xs font-bold rounded uppercase 
                     ${reg.status === RegistrationStatus.CHECKED_IN ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                    {reg.status.replace('_', ' ')}
+                    {getStatusText(reg.status)}
                   </span>
                   <span className="text-xs text-gray-400">ID: {reg.id}</span>
                 </div>
@@ -45,7 +55,7 @@ export const MyTickets: React.FC = () => {
                   <i className="fa-regular fa-calendar mr-2"></i>
                   {new Date(reg.eventStartAt).toLocaleDateString()} {new Date(reg.eventStartAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </p>
-                <p className="text-xs text-gray-400 mt-4">Show this QR code at the entrance.</p>
+                <p className="text-xs text-gray-400 mt-4">請在活動入場時出示右側 QR Code。</p>
               </div>
 
               {/* QR Section */}

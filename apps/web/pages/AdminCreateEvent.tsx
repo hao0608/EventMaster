@@ -24,20 +24,20 @@ export const AdminCreateEvent: React.FC = () => {
         ...formData,
         capacity: Number(formData.capacity)
       });
-      alert('Event Created Successfully!');
+      alert('活動建立成功！');
       navigate('/events');
     } catch (error) {
-      alert('Error creating event');
+      alert('建立活動時發生錯誤');
     }
   };
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Create New Event</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">建立新活動</h1>
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">Event Title</label>
+          <label className="block text-sm font-medium text-gray-700">活動名稱 (Title)</label>
           <input 
             type="text" 
             name="title" 
@@ -49,7 +49,7 @@ export const AdminCreateEvent: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Description</label>
+          <label className="block text-sm font-medium text-gray-700">活動描述 (Description)</label>
           <textarea 
             name="description" 
             rows={3} 
@@ -61,7 +61,7 @@ export const AdminCreateEvent: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
            <div>
-             <label className="block text-sm font-medium text-gray-700">Start Time</label>
+             <label className="block text-sm font-medium text-gray-700">開始時間</label>
              <input 
                type="datetime-local" 
                name="startAt" 
@@ -72,7 +72,7 @@ export const AdminCreateEvent: React.FC = () => {
              />
            </div>
            <div>
-             <label className="block text-sm font-medium text-gray-700">End Time</label>
+             <label className="block text-sm font-medium text-gray-700">結束時間</label>
              <input 
                type="datetime-local" 
                name="endAt" 
@@ -85,7 +85,7 @@ export const AdminCreateEvent: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Location</label>
+          <label className="block text-sm font-medium text-gray-700">地點 (Location)</label>
           <input 
             type="text" 
             name="location" 
@@ -97,7 +97,7 @@ export const AdminCreateEvent: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">Capacity</label>
+          <label className="block text-sm font-medium text-gray-700">人數上限 (Capacity)</label>
           <input 
             type="number" 
             name="capacity" 
@@ -111,7 +111,7 @@ export const AdminCreateEvent: React.FC = () => {
 
         <div className="pt-4">
           <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none">
-            Publish Event
+            發布活動
           </button>
         </div>
 
