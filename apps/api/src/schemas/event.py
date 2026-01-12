@@ -1,0 +1,45 @@
+"""Event Pydantic schemas"""
+from pydantic import BaseModel, Field
+from datetime import datetime
+from typing import Optional
+
+
+class EventBase(BaseModel):
+    """Base event schema"""
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(..., min_length=1, max_length=2000)
+    start_at: datetime
+    end_at: datetime
+    location: str = Field(..., min_length=1, max_length=200)
+    capacity: int = Field(..., ge=1, le=10000)
+
+
+class EventCreate(EventBase):
+    """Schema for creating a new event"""
+    pass
+
+
+class EventUpdate(BaseModel):
+    """Schema for updating an event"""
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, min_length=1, max_length=2000)
+    start_at: Optional[datetime] = None
+    end_at: Optional[datetime] = None
+    location: Optional[str] = Field(None, min_length=1, max_length=200)
+    capacity: Optional[int] = Field(None, ge=1, le=10000)
+
+
+class EventResponse(EventBase):
+    """Schema for event response"""
+    id: str
+    organizer_id: str
+    registered_count: int
+
+    class Config:
+        from_attributes = True
+
+
+class EventListResponse(BaseModel):
+    """Schema for event list response with pagination"""
+    events: list[EventResponse]
+    total: int

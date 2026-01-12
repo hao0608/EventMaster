@@ -1,18 +1,46 @@
-# Dependencies
+# Node.js
 node_modules/
+
+# Python
 __pycache__/
+*.py[cod]
+*$py.class
 *.pyc
 *.pyo
 *.pyd
+*.so
 .Python
-*.egg-info/
-dist/
 build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+env/
+.venv
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
 # IDE
 .vscode/
@@ -28,15 +56,20 @@ Thumbs.db
 # Build outputs
 apps/web/dist/
 apps/web/.vite/
-apps/api/.pytest_cache/
 
 # Logs
 *.log
 logs/
 
 # Testing
+.pytest_cache/
+apps/api/.pytest_cache/
 coverage/
 .coverage
+htmlcov/
+
+# Alembic migrations
+alembic/versions/*.pyc
 
 # Temporary files
 *.tmp
