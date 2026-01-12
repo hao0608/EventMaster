@@ -21,6 +21,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
+    // No else block: Do not auto-login a default user.
   }, []);
 
   const login = async (email: string) => {

@@ -1,10 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
+
+  // If user is already restored from local storage, skip login screen
+  useEffect(() => {
+    if (user) {
+      navigate('/events');
+    }
+  }, [user, navigate]);
 
   const handleLogin = async (email: string) => {
     await login(email);
@@ -25,7 +32,7 @@ export const Login: React.FC = () => {
             
             <button
               onClick={() => handleLogin('member@company.com')}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-indigo-500 transition"
+              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-blue-50 hover:border-blue-500 transition"
             >
               <div className="flex items-center">
                 <div className="bg-blue-100 p-2 rounded-full mr-3 text-blue-600">
@@ -41,7 +48,7 @@ export const Login: React.FC = () => {
 
             <button
               onClick={() => handleLogin('org@company.com')}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-purple-500 transition"
+              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-purple-50 hover:border-purple-500 transition"
             >
               <div className="flex items-center">
                 <div className="bg-purple-100 p-2 rounded-full mr-3 text-purple-600">
@@ -57,7 +64,7 @@ export const Login: React.FC = () => {
 
             <button
               onClick={() => handleLogin('admin@company.com')}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-red-500 transition"
+              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-red-50 hover:border-red-500 transition"
             >
               <div className="flex items-center">
                 <div className="bg-red-100 p-2 rounded-full mr-3 text-red-600">
