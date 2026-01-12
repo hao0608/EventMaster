@@ -1,109 +1,102 @@
-# Event Master Registration System
+# EventMaster MVP
 
-企業活動報名系統 - Monorepo
+EventMaster 是一個活動報名與驗票系統的 MVP (Minimum Viable Product)。
+本專案為 **前端儲存庫 (Frontend Repository)**，目前採用 **React + TypeScript + Vite** 建構，並使用 Mock API 模擬後端邏輯，展示完整的活動報名、QR Code 票券與現場驗票流程。
 
-## 系統架構
+## 🚀 快速開始 (Quick Start)
 
-### 前端（Frontend）
-- **Domain**: `app.example.com`
-- **Tech Stack**: React + TypeScript + Vite
-- **Hosting**: Cloudflare Pages
-- **Location**: `/apps/web/`
-
-### 後端（Backend）
-- **Domain**: `api.example.com`
-- **Tech Stack**: FastAPI + Python
-- **Hosting**: AWS ECS Fargate (behind ALB)
-- **Location**: `/apps/api/`
-
-### 基礎設施（Infrastructure）
-- **ECS Configuration**: `/infra/ecs/`
-- **Docker Files**: `/docker/`
-
-## 專案結構
-
-```
-registration-system/
-├── apps/
-│   ├── web/              # 前端專案（Vite + React）
-│   └── api/              # 後端專案（FastAPI）
-├── infra/
-│   └── ecs/              # ECS task definitions & service configs
-├── docker/
-│   └── api.Dockerfile    # 後端 Docker image
-├── .github/
-│   └── workflows/
-│       ├── deploy-web.yml    # 前端部署 workflow
-│       └── deploy-api.yml    # 後端部署 workflow
-└── README.md
-```
-
-## 開發指南
-
-### 前端開發
-
+### 1. 安裝相依套件
 ```bash
-cd apps/web
 npm install
+```
+
+### 2. 啟動開發伺服器
+```bash
 npm run dev
 ```
 
-前端會在 `http://localhost:5173` 啟動
+開啟瀏覽器前往 `http://localhost:5173` 即可開始使用。
 
-### 後端開發
+---
 
-```bash
-cd apps/api
-pip install -r requirements.txt
-uvicorn main:app --reload
+## 🧪 測試帳號 (Mock Accounts)
+
+系統預設提供三種角色供測試 (密碼預設皆為 `123456`)：
+
+| 角色 | Email | 功能權限 |
+| :--- | :--- | :--- |
+| **Member** (會員) | `member@company.com` | 瀏覽活動、報名、查看 QR Code |
+| **Organizer** (主辦方) | `org@company.com` | 建立活動、**掃描驗票**、現場補登 (Walk-in) |
+| **Admin** (管理員) | `admin@company.com` | 系統全權限、管理用戶角色 |
+
+---
+
+## 📚 文件索引 (Documentation)
+
+詳細的設計文件請參考 `docs/` 目錄：
+
+*   **[MVP 產品規格書 (MVP_SPEC.md)](docs/MVP_SPEC.md)**: 包含產品目標、User Stories、資料庫 Schema 與 API 定義。(後端開發請參考此份)
+*   **[前端架構說明 (FRONTEND_ARCH.md)](docs/FRONTEND_ARCH.md)**: 包含前端目錄結構、技術堆疊與 Mock API 邏輯說明。
+
+---
+
+## 🛠️ 技術堆疊
+
+*   **Framework**: React 18
+*   **Language**: TypeScript
+*   **Build Tool**: Vite
+*   **Styling**: Tailwind CSS
+*   **Routing**: React Router DOM v6
+*   **State**: React Context API
+
+---
+
+## 📁 專案結構 (Project Structure)
+
+```
+eventmaster/
+├── apps/
+│   ├── web/                    # 前端專案 (React + TypeScript + Vite)
+│   │   ├── components/         # 共用 UI 元件
+│   │   │   ├── Navbar.tsx
+│   │   │   └── ProtectedRoute.tsx
+│   │   ├── contexts/           # 全域狀態管理
+│   │   │   └── AuthContext.tsx
+│   │   ├── pages/              # 頁面視圖
+│   │   │   ├── Login.tsx
+│   │   │   ├── Events.tsx
+│   │   │   ├── EventDetail.tsx
+│   │   │   ├── EditEvent.tsx
+│   │   │   ├── MyTickets.tsx
+│   │   │   ├── OrganizerVerify.tsx
+│   │   │   ├── EventAttendees.tsx
+│   │   │   ├── AdminCreateEvent.tsx
+│   │   │   └── AdminUsers.tsx
+│   │   ├── services/           # API 服務層
+│   │   │   └── mockApi.ts
+│   │   ├── public/             # 靜態資源
+│   │   ├── types.ts            # TypeScript 型別定義
+│   │   ├── App.tsx             # 主應用程式與路由
+│   │   ├── index.tsx           # 入口點
+│   │   ├── vite.config.ts      # Vite 配置
+│   │   └── package.json
+│   └── api/                    # 後端專案 (預留，未來開發)
+├── docs/                       # 專案文件
+│   ├── MVP_SPEC.md            # MVP 產品規格書
+│   └── FRONTEND_ARCH.md       # 前端架構說明
+├── infra/                      # 基礎設施配置
+│   └── ecs/                   # AWS ECS 配置 (預留)
+├── docker/                     # Docker 配置 (預留)
+├── .github/                    # GitHub Actions 工作流程
+│   └── workflows/
+├── package.json                # Monorepo 根目錄套件配置
+├── CLOUDFLARE_DEPLOYMENT.md   # Cloudflare Pages 部署指南
+└── README.md                   # 本文件
 ```
 
-後端會在 `http://localhost:8000` 啟動
+### 目錄說明
 
-## 部署
-
-### 前端部署（Cloudflare Pages）
-
-1. 連接 GitHub repository 到 Cloudflare Pages
-2. 設定構建配置：
-   - **Build command**: `cd apps/web && npm ci && npm run build`
-   - **Build output directory**: `apps/web/dist`
-   - **Environment variables**:
-     - `VITE_API_BASE_URL=https://api.example.com`
-
-3. Push 到 `main` branch 會自動觸發部署
-
-### 後端部署（AWS ECS Fargate）
-
-後端透過 GitHub Actions 自動部署到 ECS：
-1. Push 到 `main` branch
-2. GitHub Actions 構建 Docker image
-3. 推送到 ECR
-4. 更新 ECS service
-
-詳見 `.github/workflows/deploy-api.yml`
-
-## 環境變數
-
-### 前端（apps/web/.env.local）
-```
-VITE_API_BASE_URL=https://api.example.com
-```
-
-### 後端（apps/api/.env）
-```
-# 參考 apps/api/.env.example
-```
-
-## DNS 設定
-
-- `app.example.com` → Cloudflare Pages
-- `api.example.com` → AWS ALB (CNAME/ALIAS)
-
-## 認證流程
-
-使用 AWS Cognito + 公司 IdP（SAML/OIDC）整合
-
-## License
-
-Private
+*   **`apps/web/`**: 前端應用程式主目錄，包含所有 React 元件、頁面與服務
+*   **`docs/`**: 專案文件，包含產品規格與技術架構說明
+*   **`apps/api/`**: 後端 API 目錄（預留給未來後端開發使用）
+*   **`infra/` & `docker/`**: 基礎設施與容器化配置（預留）
