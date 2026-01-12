@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockApi } from '../services/mockApi';
+import { useAuth } from '../contexts/AuthContext';
 
 export const AdminCreateEvent: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -19,9 +22,12 @@ export const AdminCreateEvent: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     try {
       await mockApi.createEvent({
         ...formData,
+        organizerId: user.id, // Assign current user as owner
         capacity: Number(formData.capacity)
       });
       alert('活動建立成功！');

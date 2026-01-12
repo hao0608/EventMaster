@@ -33,23 +33,25 @@ export const Navbar: React.FC = () => {
                 我的票券
               </Link>
 
-              {/* Organizer Links */}
+              {/* Organizer & Admin Links - Verification */}
               {(user.role === UserRole.ORGANIZER || user.role === UserRole.ADMIN) && (
                 <Link to="/organizer/verify" className="bg-indigo-700 hover:bg-indigo-800 px-3 py-2 rounded-md text-sm font-medium border border-indigo-500">
                   <i className="fa-solid fa-clipboard-check mr-2"></i>驗票後台
                 </Link>
               )}
 
-              {/* Admin Links */}
+              {/* Organizer & Admin Links - Create Event */}
+              {(user.role === UserRole.ORGANIZER || user.role === UserRole.ADMIN) && (
+                <Link to="/admin/create-event" className="hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium">
+                   建立活動
+                </Link>
+              )}
+
+              {/* Admin Only Links */}
               {user.role === UserRole.ADMIN && (
-                <>
-                  <Link to="/admin/create-event" className="hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium">
-                    建立活動
-                  </Link>
                   <Link to="/admin/users" className="hover:bg-indigo-500 px-3 py-2 rounded-md text-sm font-medium">
                     用戶權限
                   </Link>
-                </>
               )}
             </div>
           </div>

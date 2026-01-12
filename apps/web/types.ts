@@ -13,6 +13,7 @@ export interface User {
 
 export interface Event {
   id: string;
+  organizerId: string; // The owner of the event
   title: string;
   description: string;
   startAt: string;
@@ -39,8 +40,15 @@ export interface Registration {
   createdAt: string;
 }
 
+// Check-in / Verification
 export interface CheckInResult {
   success: boolean;
   message: string;
   registration?: Registration;
+}
+
+// For Organizer/Admin View (User details + Registration details)
+export interface Attendee extends Registration {
+  userDisplayName: string;
+  userEmail: string;
 }

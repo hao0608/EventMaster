@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { mockApi } from '../services/mockApi';
 import { CheckInResult, Event } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 export const OrganizerVerify: React.FC = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'verify' | 'walkin'>('verify');
   
   // --- Common Data ---
@@ -21,23 +23,26 @@ export const OrganizerVerify: React.FC = () => {
   const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
-    // Load events for Walk-in dropdown
-    mockApi.getEvents().then(data => {
-      setEvents(data);
-      if (data.length > 0) setSelectedEventId(data[0].id);
-    });
-  }, []);
+    // Only load events managed by this user (or all if admin) for Walk-in selection
+    if (user) {
+        mockApi.getManagedEvents(user.id, user.role).then(data => {
+            setEvents(data);
+            if (data.length > 0) setSelectedEventId(data[0].id);
+        });
+    }
+  }, [user]);
 
   // --- Verify Handler ---
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputCode.trim()) return;
+    if (!inputCode.trim() || !user) return;
 
     setVerifying(true);
     setVerifyResult(null);
 
     try {
-      const res = await mockApi.verifyTicket(inputCode);
+      // Pass verifier ID for ownership check
+      const res = await mockApi.verifyTicket(inputCode, user.id, user.role);
       setVerifyResult(res);
       if (res.success) {
         setInputCode(''); 
@@ -52,13 +57,14 @@ export const OrganizerVerify: React.FC = () => {
   // --- Walk-in Handler ---
   const handleWalkIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedEventId || !walkInEmail) return;
+    if (!selectedEventId || !walkInEmail || !user) return;
 
     setRegistering(true);
     setWalkInResult(null);
 
     try {
-      const res = await mockApi.walkInRegister(selectedEventId, walkInEmail, walkInName);
+      // Pass verifier ID for ownership check
+      const res = await mockApi.walkInRegister(selectedEventId, walkInEmail, walkInName, user.id, user.role);
       setWalkInResult(res);
       if (res.success) {
         setWalkInEmail('');
@@ -80,6 +86,7 @@ export const OrganizerVerify: React.FC = () => {
     if (msg.includes('Walk-in Registered')) return '現場報名並簽到成功！';
     if (msg.includes('Existing registration found')) return '找到現有報名資料，簽到成功！';
     if (msg.includes('User already checked in')) return '此用戶已經簽到過了。';
+    // Return original message if it's a permission error or unknown
     return msg;
   };
 
@@ -175,18 +182,24 @@ export const OrganizerVerify: React.FC = () => {
           <div>
             <form onSubmit={handleWalkIn} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">選擇活動</label>
-                <select
-                  value={selectedEventId}
-                  onChange={(e) => setSelectedEventId(e.target.value)}
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                >
-                  {events.map(event => (
-                    <option key={event.id} value={event.id}>
-                      {event.title}
-                    </option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-1">選擇活動 (僅顯示您主辦的活動)</label>
+                {events.length === 0 ? (
+                    <div className="text-gray-500 text-sm border p-2 rounded bg-gray-50">
+                        您目前沒有正在舉辦的活動。
+                    </div>
+                ) : (
+                    <select
+                    value={selectedEventId}
+                    onChange={(e) => setSelectedEventId(e.target.value)}
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    >
+                    {events.map(event => (
+                        <option key={event.id} value={event.id}>
+                        {event.title}
+                        </option>
+                    ))}
+                    </select>
+                )}
               </div>
 
               <div>

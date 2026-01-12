@@ -1,4 +1,4 @@
-import { User, UserRole, Event, Registration, RegistrationStatus, CheckInResult } from '../types';
+import { User, UserRole, Event, Registration, RegistrationStatus, CheckInResult, Attendee } from '../types';
 
 // --- Mock Data ---
 
@@ -11,6 +11,7 @@ let MOCK_USERS: User[] = [
 let MOCK_EVENTS: Event[] = [
   {
     id: 'e1',
+    organizerId: 'u2', // Owned by Bob
     title: 'Q1 All-Hands Meeting',
     description: 'Company wide updates and quarterly goals review.',
     startAt: '2023-11-15T10:00:00',
@@ -21,6 +22,7 @@ let MOCK_EVENTS: Event[] = [
   },
   {
     id: 'e2',
+    organizerId: 'u3', // Owned by Charlie (Admin)
     title: 'Tech Talk: AWS Serverless',
     description: 'Deep dive into Lambda, Fargate and Aurora.',
     startAt: '2023-11-20T14:00:00',
@@ -61,6 +63,15 @@ export const mockApi = {
   getEvents: async (): Promise<Event[]> => {
     await delay(400);
     return [...MOCK_EVENTS];
+  },
+  
+  // New helper to get events managed by a specific user
+  getManagedEvents: async (userId: string, role: UserRole): Promise<Event[]> => {
+    await delay(300);
+    if (role === UserRole.ADMIN) {
+        return [...MOCK_EVENTS];
+    }
+    return MOCK_EVENTS.filter(e => e.organizerId === userId);
   },
 
   getEventById: async (id: string): Promise<Event | undefined> => {
@@ -108,12 +119,17 @@ export const mockApi = {
     return newReg;
   },
 
-  // WALK-IN REGISTRATION (New Feature)
-  walkInRegister: async (eventId: string, email: string, displayName: string): Promise<CheckInResult> => {
+  // WALK-IN REGISTRATION
+  walkInRegister: async (eventId: string, email: string, displayName: string, verifierId: string, verifierRole: UserRole): Promise<CheckInResult> => {
     await delay(800);
     
     const event = MOCK_EVENTS.find(e => e.id === eventId);
     if (!event) throw new Error('Event not found');
+
+    // OWNERSHIP CHECK
+    if (verifierRole !== UserRole.ADMIN && event.organizerId !== verifierId) {
+        return { success: false, message: '權限不足：您不是此活動的主辦方，無法進行現場報名操作。' };
+    }
 
     // 1. Find or Create User
     let user = MOCK_USERS.find(u => u.email === email);
@@ -163,7 +179,7 @@ export const mockApi = {
   },
 
   // Organizer / Check-in
-  verifyTicket: async (qrCode: string): Promise<CheckInResult> => {
+  verifyTicket: async (qrCode: string, verifierId: string, verifierRole: UserRole): Promise<CheckInResult> => {
     await delay(600);
     const regIndex = MOCK_REGISTRATIONS.findIndex(r => r.qrCode === qrCode);
     
@@ -172,6 +188,14 @@ export const mockApi = {
     }
 
     const reg = MOCK_REGISTRATIONS[regIndex];
+    const event = MOCK_EVENTS.find(e => e.id === reg.eventId);
+
+    // OWNERSHIP CHECK
+    if (!event) return { success: false, message: 'Event data missing.' };
+    
+    if (verifierRole !== UserRole.ADMIN && event.organizerId !== verifierId) {
+        return { success: false, message: '權限不足：這張票券屬於其他主辦方的活動，您無法驗票。' };
+    }
 
     if (reg.status === RegistrationStatus.CHECKED_IN) {
       return { success: false, message: 'Ticket already used / Checked in.', registration: reg };
@@ -186,5 +210,23 @@ export const mockApi = {
     MOCK_REGISTRATIONS[regIndex] = updatedReg;
 
     return { success: true, message: 'Check-in Successful!', registration: updatedReg };
+  },
+
+  // ** NEW: For Organizer to see the list **
+  getEventAttendees: async (eventId: string): Promise<Attendee[]> => {
+    await delay(500);
+    const registrations = MOCK_REGISTRATIONS.filter(r => r.eventId === eventId);
+    
+    // Join with Users to get details
+    const attendees: Attendee[] = registrations.map(reg => {
+        const user = MOCK_USERS.find(u => u.id === reg.userId);
+        return {
+            ...reg,
+            userDisplayName: user ? user.displayName : 'Unknown User',
+            userEmail: user ? user.email : 'Unknown Email'
+        };
+    });
+
+    return attendees.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 };
