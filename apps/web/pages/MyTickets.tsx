@@ -9,13 +9,33 @@ export const MyTickets: React.FC = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
-      mockApi.getMyRegistrations(user.id).then(data => {
-        setRegistrations(data);
-        setLoading(false);
-      });
-    }
+    loadTickets();
   }, [user]);
+
+  const loadTickets = () => {
+    if (user) {
+        mockApi.getMyRegistrations(user.id).then(data => {
+            // Sort: Active first, then cancelled
+            const sorted = data.sort((a, b) => {
+                if (a.status === RegistrationStatus.CANCELLED && b.status !== RegistrationStatus.CANCELLED) return 1;
+                if (a.status !== RegistrationStatus.CANCELLED && b.status === RegistrationStatus.CANCELLED) return -1;
+                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            });
+            setRegistrations(sorted);
+            setLoading(false);
+        });
+    }
+  };
+
+  const handleCancel = async (regId: string) => {
+      if (!confirm('確定要取消此報名嗎？名額將會釋出。')) return;
+      try {
+          await mockApi.cancelRegistration(regId);
+          loadTickets(); // Reload
+      } catch (e) {
+          alert('取消失敗');
+      }
+  };
 
   // Helper to translate status
   const getStatusText = (status: RegistrationStatus) => {
@@ -40,12 +60,13 @@ export const MyTickets: React.FC = () => {
       ) : (
         <div className="space-y-6">
           {registrations.map(reg => (
-            <div key={reg.id} className="bg-white rounded-xl shadow-md overflow-hidden flex flex-col sm:flex-row border border-gray-100">
+            <div key={reg.id} className={`bg-white rounded-xl shadow-md overflow-hidden flex flex-col sm:flex-row border ${reg.status === RegistrationStatus.CANCELLED ? 'border-gray-200 opacity-75' : 'border-gray-100'}`}>
               {/* Event Info */}
               <div className="flex-1 p-6 flex flex-col justify-center">
                 <div className="flex items-center space-x-2 mb-2">
                   <span className={`px-2 py-1 text-xs font-bold rounded uppercase 
-                    ${reg.status === RegistrationStatus.CHECKED_IN ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                    ${reg.status === RegistrationStatus.CHECKED_IN ? 'bg-green-100 text-green-800' : 
+                      reg.status === RegistrationStatus.CANCELLED ? 'bg-gray-200 text-gray-600' : 'bg-blue-100 text-blue-800'}`}>
                     {getStatusText(reg.status)}
                   </span>
                   <span className="text-xs text-gray-400">ID: {reg.id}</span>
@@ -55,20 +76,42 @@ export const MyTickets: React.FC = () => {
                   <i className="fa-regular fa-calendar mr-2"></i>
                   {new Date(reg.eventStartAt).toLocaleDateString()} {new Date(reg.eventStartAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                 </p>
-                <p className="text-xs text-gray-400 mt-4">請在活動入場時出示右側 QR Code。</p>
+                
+                {reg.status === RegistrationStatus.REGISTERED && (
+                    <div className="mt-4">
+                        <button 
+                            onClick={() => handleCancel(reg.id)}
+                            className="text-sm text-red-600 hover:text-red-800 font-medium underline"
+                        >
+                            取消報名
+                        </button>
+                    </div>
+                )}
+                {reg.status === RegistrationStatus.REGISTERED && (
+                    <p className="text-xs text-gray-400 mt-2">請在活動入場時出示右側 QR Code。</p>
+                )}
               </div>
 
               {/* QR Section */}
               <div className="bg-gray-50 p-6 flex flex-col items-center justify-center border-t sm:border-t-0 sm:border-l border-gray-100 sm:w-64">
-                <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
-                  {/* Using a reliable public QR API for the demo to avoid complex dependencies */}
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(reg.qrCode)}`}
-                    alt="Ticket QR Code" 
-                    className="w-32 h-32 object-contain"
-                  />
-                </div>
-                <p className="mt-3 text-xs font-mono text-gray-500 text-center break-all">{reg.qrCode}</p>
+                {reg.status !== RegistrationStatus.CANCELLED ? (
+                    <>
+                        <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
+                        <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(reg.qrCode)}`}
+                            alt="Ticket QR Code" 
+                            className={`w-32 h-32 object-contain ${reg.status === RegistrationStatus.CHECKED_IN ? 'opacity-50' : ''}`}
+                        />
+                        </div>
+                        <p className="mt-3 text-xs font-mono text-gray-500 text-center break-all">{reg.qrCode}</p>
+                        {reg.status === RegistrationStatus.CHECKED_IN && <p className="text-green-600 font-bold text-sm mt-1">票券已使用</p>}
+                    </>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                        <i className="fa-solid fa-ban text-4xl mb-2"></i>
+                        <span className="text-sm font-medium">票券無效</span>
+                    </div>
+                )}
               </div>
             </div>
           ))}

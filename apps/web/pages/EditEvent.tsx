@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { mockApi } from '../services/mockApi';
 import { useAuth } from '../contexts/AuthContext';
+import { Event, UserRole } from '../types';
 
-export const AdminCreateEvent: React.FC = () => {
+export const EditEvent: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -13,8 +16,36 @@ export const AdminCreateEvent: React.FC = () => {
     startAt: '',
     endAt: '',
     location: '',
-    capacity: 100
+    capacity: 0
   });
+
+  useEffect(() => {
+    if (id) {
+        mockApi.getEventById(id).then(event => {
+            if (!event) {
+                alert('Event not found');
+                navigate('/events');
+                return;
+            }
+            // Check ownership
+            if (user && user.role !== UserRole.ADMIN && event.organizerId !== user.id) {
+                alert('Permission denied');
+                navigate('/events');
+                return;
+            }
+
+            setFormData({
+                title: event.title,
+                description: event.description,
+                startAt: event.startAt,
+                endAt: event.endAt,
+                location: event.location,
+                capacity: event.capacity
+            });
+            setLoading(false);
+        });
+    }
+  }, [id, user, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,24 +53,31 @@ export const AdminCreateEvent: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!id) return;
 
     try {
-      await mockApi.createEvent({
+      await mockApi.updateEvent(id, {
         ...formData,
-        organizerId: user.id, // Assign current user as owner
         capacity: Number(formData.capacity)
       });
-      alert('活動建立成功！');
-      navigate('/events');
+      alert('活動更新成功！');
+      navigate(`/events/${id}`);
     } catch (error) {
-      alert('建立活動時發生錯誤');
+      alert('更新失敗');
     }
   };
 
+  if (loading) return <div className="p-8 text-center">Loading...</div>;
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">建立新活動</h1>
+      <div className="flex items-center mb-6">
+          <button onClick={() => navigate(-1)} className="mr-4 text-gray-500 hover:text-gray-700">
+              <i className="fa-solid fa-arrow-left"></i>
+          </button>
+          <h1 className="text-2xl font-bold text-gray-900">編輯活動</h1>
+      </div>
+
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
         
         <div>
@@ -113,11 +151,12 @@ export const AdminCreateEvent: React.FC = () => {
             value={formData.capacity} 
             onChange={handleChange}
           />
+          <p className="text-xs text-red-500 mt-1">注意：若減少人數上限且已報名人數超過新上限，不會自動取消既有報名。</p>
         </div>
 
-        <div className="pt-4">
-          <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-            發布活動
+        <div className="pt-4 flex gap-4">
+          <button type="submit" className="flex-1 justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
+            儲存變更
           </button>
         </div>
 

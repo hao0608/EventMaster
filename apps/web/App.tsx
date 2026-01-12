@@ -5,6 +5,7 @@ import { Navbar } from './components/Navbar';
 import { Login } from './pages/Login';
 import { Events } from './pages/Events';
 import { EventDetail } from './pages/EventDetail';
+import { EditEvent } from './pages/EditEvent';
 import { EventAttendees } from './pages/EventAttendees';
 import { MyTickets } from './pages/MyTickets';
 import { OrganizerVerify } from './pages/OrganizerVerify';
@@ -54,10 +55,15 @@ const App: React.FC = () => {
               </ProtectedRoute>
             } />
             
-            {/* Protected: Organizer & Admin (Creation) */}
+            {/* Protected: Organizer & Admin (Creation/Editing) */}
             <Route path="/admin/create-event" element={
               <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
                 <AdminCreateEvent />
+              </ProtectedRoute>
+            } />
+             <Route path="/events/:id/edit" element={
+              <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
+                <EditEvent />
               </ProtectedRoute>
             } />
             

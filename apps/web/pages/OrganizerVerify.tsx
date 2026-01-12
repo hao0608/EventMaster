@@ -100,7 +100,7 @@ export const OrganizerVerify: React.FC = () => {
           onClick={() => setActiveTab('verify')}
           className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm focus:outline-none ${
             activeTab === 'verify'
-              ? 'border-indigo-500 text-indigo-600'
+              ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           }`}
         >
@@ -111,7 +111,7 @@ export const OrganizerVerify: React.FC = () => {
           onClick={() => setActiveTab('walkin')}
           className={`flex-1 py-4 px-1 text-center border-b-2 font-medium text-sm focus:outline-none ${
             activeTab === 'walkin'
-              ? 'border-indigo-500 text-indigo-600'
+              ? 'border-blue-500 text-blue-600'
               : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
           }`}
         >
@@ -136,7 +136,7 @@ export const OrganizerVerify: React.FC = () => {
                     value={inputCode}
                     onChange={(e) => setInputCode(e.target.value)}
                     placeholder="QR-..."
-                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white text-gray-900"
                     autoFocus
                   />
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -147,7 +147,7 @@ export const OrganizerVerify: React.FC = () => {
               <button 
                 type="submit"
                 disabled={verifying || !inputCode}
-                className="w-full bg-indigo-600 text-white py-3 rounded-lg font-bold hover:bg-indigo-700 transition disabled:bg-gray-300"
+                className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold hover:bg-blue-700 transition disabled:bg-gray-300"
               >
                 {verifying ? '驗證中...' : '驗證票券'}
               </button>
@@ -191,7 +191,7 @@ export const OrganizerVerify: React.FC = () => {
                     <select
                     value={selectedEventId}
                     onChange={(e) => setSelectedEventId(e.target.value)}
-                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                    className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900"
                     >
                     {events.map(event => (
                         <option key={event.id} value={event.id}>
@@ -210,7 +210,7 @@ export const OrganizerVerify: React.FC = () => {
                   value={walkInEmail}
                   onChange={(e) => setWalkInEmail(e.target.value)}
                   placeholder="user@example.com"
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900"
                 />
               </div>
               
@@ -221,7 +221,7 @@ export const OrganizerVerify: React.FC = () => {
                   value={walkInName}
                   onChange={(e) => setWalkInName(e.target.value)}
                   placeholder="王小明"
-                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                  className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900"
                 />
               </div>
 

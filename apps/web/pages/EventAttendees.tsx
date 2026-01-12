@@ -31,7 +31,7 @@ export const EventAttendees: React.FC = () => {
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between">
          <div>
-            <Link to={`/events/${event.id}`} className="text-indigo-600 hover:text-indigo-800 mb-2 inline-block">
+            <Link to={`/events/${event.id}`} className="text-blue-600 hover:text-blue-800 mb-2 inline-block">
                 <i className="fa-solid fa-arrow-left mr-1"></i> 返回活動詳情
             </Link>
             <h1 className="text-2xl font-bold text-gray-900">{event.title} - 報名名單</h1>

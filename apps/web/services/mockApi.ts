@@ -65,7 +65,6 @@ export const mockApi = {
     return [...MOCK_EVENTS];
   },
   
-  // New helper to get events managed by a specific user
   getManagedEvents: async (userId: string, role: UserRole): Promise<Event[]> => {
     await delay(300);
     if (role === UserRole.ADMIN) {
@@ -90,15 +89,52 @@ export const mockApi = {
     return newEvent;
   },
 
+  // NEW: Update Event
+  updateEvent: async (eventId: string, updates: Partial<Event>): Promise<Event> => {
+    await delay(500);
+    const index = MOCK_EVENTS.findIndex(e => e.id === eventId);
+    if (index === -1) throw new Error('Event not found');
+    
+    // Merge updates
+    const updatedEvent = { ...MOCK_EVENTS[index], ...updates };
+    MOCK_EVENTS[index] = updatedEvent;
+    return updatedEvent;
+  },
+
+  // NEW: Delete Event
+  deleteEvent: async (eventId: string): Promise<void> => {
+    await delay(500);
+    const index = MOCK_EVENTS.findIndex(e => e.id === eventId);
+    if (index === -1) throw new Error('Event not found');
+    
+    // Remove event
+    MOCK_EVENTS.splice(index, 1);
+    
+    // Ideally, we should also cancel/delete associated registrations, 
+    // but for MVP mock, we'll leave them as orphans or handle display logic elsewhere.
+    MOCK_REGISTRATIONS = MOCK_REGISTRATIONS.filter(r => r.eventId !== eventId);
+  },
+
   // Registration
   registerForEvent: async (userId: string, eventId: string): Promise<Registration> => {
     await delay(600);
     const event = MOCK_EVENTS.find(e => e.id === eventId);
     if (!event) throw new Error('Event not found');
     
-    // Simple duplicate check
+    // Check if user previously cancelled, if so, reactivate? 
+    // For simplicity, we just check active registrations.
     const existing = MOCK_REGISTRATIONS.find(r => r.eventId === eventId && r.userId === userId);
-    if (existing) throw new Error('Already registered');
+    
+    if (existing) {
+        if (existing.status === RegistrationStatus.CANCELLED) {
+             // Reactivate
+             existing.status = RegistrationStatus.REGISTERED;
+             existing.createdAt = new Date().toISOString(); // Reset time
+             event.registeredCount += 1;
+             return existing;
+        }
+        throw new Error('Already registered');
+    }
 
     const newReg: Registration = {
       id: `r${Date.now()}`,
@@ -112,11 +148,32 @@ export const mockApi = {
     };
     
     MOCK_REGISTRATIONS.push(newReg);
-    
-    // Update count
     event.registeredCount += 1;
     
     return newReg;
+  },
+
+  // NEW: Cancel Registration
+  cancelRegistration: async (registrationId: string): Promise<void> => {
+      await delay(400);
+      const reg = MOCK_REGISTRATIONS.find(r => r.id === registrationId);
+      if (!reg) throw new Error('Registration not found');
+      
+      if (reg.status === RegistrationStatus.CHECKED_IN) {
+          throw new Error('Cannot cancel a ticket that has already been checked in.');
+      }
+
+      if (reg.status === RegistrationStatus.CANCELLED) {
+          return; // Already cancelled
+      }
+
+      reg.status = RegistrationStatus.CANCELLED;
+      
+      // Decrease event count
+      const event = MOCK_EVENTS.find(e => e.id === reg.eventId);
+      if (event && event.registeredCount > 0) {
+          event.registeredCount -= 1;
+      }
   },
 
   // WALK-IN REGISTRATION
@@ -126,12 +183,10 @@ export const mockApi = {
     const event = MOCK_EVENTS.find(e => e.id === eventId);
     if (!event) throw new Error('Event not found');
 
-    // OWNERSHIP CHECK
     if (verifierRole !== UserRole.ADMIN && event.organizerId !== verifierId) {
         return { success: false, message: '權限不足：您不是此活動的主辦方，無法進行現場報名操作。' };
     }
 
-    // 1. Find or Create User
     let user = MOCK_USERS.find(u => u.email === email);
     if (!user) {
       user = {
@@ -143,26 +198,28 @@ export const mockApi = {
       MOCK_USERS.push(user);
     }
 
-    // 2. Check existing registration
     let reg = MOCK_REGISTRATIONS.find(r => r.eventId === eventId && r.userId === user!.id);
     
     if (reg) {
-      // If already registered but not checked in, check them in
       if (reg.status === RegistrationStatus.CHECKED_IN) {
         return { success: false, message: 'User already checked in.', registration: reg };
       }
+      // If cancelled, reactivate and check in
+      if (reg.status === RegistrationStatus.CANCELLED) {
+         event.registeredCount += 1;
+      }
+      
       reg.status = RegistrationStatus.CHECKED_IN;
-      return { success: true, message: 'Existing registration found. Checked in successfully!', registration: reg };
+      return { success: true, message: 'Existing registration checked in!', registration: reg };
     }
 
-    // 3. Create new Registration
     const newReg: Registration = {
       id: `r${Date.now()}`,
       eventId,
       userId: user.id,
       eventTitle: event.title,
       eventStartAt: event.startAt,
-      status: RegistrationStatus.CHECKED_IN, // Immediate check-in
+      status: RegistrationStatus.CHECKED_IN,
       qrCode: `QR-${eventId}-${user.id}-WALKIN`,
       createdAt: new Date().toISOString()
     };
@@ -178,7 +235,6 @@ export const mockApi = {
     return MOCK_REGISTRATIONS.filter(r => r.userId === userId);
   },
 
-  // Organizer / Check-in
   verifyTicket: async (qrCode: string, verifierId: string, verifierRole: UserRole): Promise<CheckInResult> => {
     await delay(600);
     const regIndex = MOCK_REGISTRATIONS.findIndex(r => r.qrCode === qrCode);
@@ -190,7 +246,6 @@ export const mockApi = {
     const reg = MOCK_REGISTRATIONS[regIndex];
     const event = MOCK_EVENTS.find(e => e.id === reg.eventId);
 
-    // OWNERSHIP CHECK
     if (!event) return { success: false, message: 'Event data missing.' };
     
     if (verifierRole !== UserRole.ADMIN && event.organizerId !== verifierId) {
@@ -205,19 +260,16 @@ export const mockApi = {
       return { success: false, message: 'Ticket was cancelled.', registration: reg };
     }
 
-    // Update status
     const updatedReg = { ...reg, status: RegistrationStatus.CHECKED_IN };
     MOCK_REGISTRATIONS[regIndex] = updatedReg;
 
     return { success: true, message: 'Check-in Successful!', registration: updatedReg };
   },
 
-  // ** NEW: For Organizer to see the list **
   getEventAttendees: async (eventId: string): Promise<Attendee[]> => {
     await delay(500);
     const registrations = MOCK_REGISTRATIONS.filter(r => r.eventId === eventId);
     
-    // Join with Users to get details
     const attendees: Attendee[] = registrations.map(reg => {
         const user = MOCK_USERS.find(u => u.id === reg.userId);
         return {
