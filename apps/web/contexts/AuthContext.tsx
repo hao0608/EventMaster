@@ -5,7 +5,7 @@ import { mockApi } from '../services/mockApi';
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -21,18 +21,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
-    // No else block: Do not auto-login a default user.
   }, []);
 
-  const login = async (email: string) => {
+  const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const userData = await mockApi.login(email);
+      const userData = await mockApi.login(email, password);
       setUser(userData);
       localStorage.setItem('eventmaster_user', JSON.stringify(userData));
     } catch (error) {
       console.error(error);
-      alert('Login failed');
+      throw error; // Re-throw to handle in UI
     } finally {
       setIsLoading(false);
     }

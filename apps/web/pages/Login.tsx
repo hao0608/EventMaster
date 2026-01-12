@@ -1,10 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
 export const Login: React.FC = () => {
-  const { login, user } = useAuth();
+  const { login, user, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
 
   // If user is already restored from local storage, skip login screen
   useEffect(() => {
@@ -13,76 +17,92 @@ export const Login: React.FC = () => {
     }
   }, [user, navigate]);
 
-  const handleLogin = async (email: string) => {
-    await login(email);
-    navigate('/events');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    try {
+      await login(email, password);
+      navigate('/events');
+    } catch (err: any) {
+      setError('登入失敗，請檢查您的 Email 或密碼。');
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-xl overflow-hidden">
-        <div className="px-6 py-8">
+      <div className="max-w-md w-full">
+        <div className="bg-white rounded-lg shadow-xl overflow-hidden p-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-gray-900">EventMaster MVP</h2>
-            <p className="mt-2 text-sm text-gray-600">模擬 IAM / SSO 登入系統</p>
+            <h1 className="text-3xl font-extrabold text-blue-600">EventMaster</h1>
+            <p className="mt-2 text-sm text-gray-600">活動報名與驗票系統 (MVP)</p>
           </div>
           
-          <div className="space-y-4">
-            <p className="text-xs text-center text-gray-400 uppercase tracking-widest">請選擇登入角色</p>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 text-red-600 p-3 rounded text-sm border border-red-200">
+                {error}
+              </div>
+            )}
             
-            <button
-              onClick={() => handleLogin('member@company.com')}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-blue-50 hover:border-blue-500 transition"
-            >
-              <div className="flex items-center">
-                <div className="bg-blue-100 p-2 rounded-full mr-3 text-blue-600">
-                  <i className="fa-solid fa-user"></i>
-                </div>
-                <div className="text-left">
-                  <div className="font-bold">一般會員 (Member)</div>
-                  <div className="text-xs text-gray-500">瀏覽活動與報名參加</div>
-                </div>
-              </div>
-              <i className="fa-solid fa-arrow-right text-gray-300"></i>
-            </button>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900"
+                placeholder="name@company.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                密碼
+              </label>
+              <input
+                id="password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white text-gray-900"
+                placeholder="••••••••"
+              />
+            </div>
 
             <button
-              onClick={() => handleLogin('org@company.com')}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-purple-50 hover:border-purple-500 transition"
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition"
             >
-              <div className="flex items-center">
-                <div className="bg-purple-100 p-2 rounded-full mr-3 text-purple-600">
-                  <i className="fa-solid fa-clipboard-check"></i>
-                </div>
-                <div className="text-left">
-                  <div className="font-bold">主辦方 (Organizer)</div>
-                  <div className="text-xs text-gray-500">掃描 QR Code 進行驗票</div>
-                </div>
-              </div>
-              <i className="fa-solid fa-arrow-right text-gray-300"></i>
+              {isLoading ? '登入中...' : '登入'}
             </button>
-
-            <button
-              onClick={() => handleLogin('admin@company.com')}
-              className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-red-50 hover:border-red-500 transition"
-            >
-              <div className="flex items-center">
-                <div className="bg-red-100 p-2 rounded-full mr-3 text-red-600">
-                  <i className="fa-solid fa-shield-halved"></i>
-                </div>
-                <div className="text-left">
-                  <div className="font-bold">系統管理員 (Admin)</div>
-                  <div className="text-xs text-gray-500">管理所有活動與用戶</div>
-                </div>
-              </div>
-              <i className="fa-solid fa-arrow-right text-gray-300"></i>
-            </button>
-          </div>
+          </form>
         </div>
-        <div className="bg-gray-50 px-6 py-4 text-center">
-          <p className="text-xs text-gray-500">
-            正式環境將導向 Cognito Hosted UI
-          </p>
+
+        {/* Developer Hints for MVP */}
+        <div className="mt-6 bg-white shadow rounded-lg p-4 text-xs text-gray-500 border border-gray-200">
+          <p className="font-bold mb-2 uppercase tracking-wide">測試用帳號 (密碼任意)</p>
+          <div className="grid gap-2">
+            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('member@company.com'); setPassword('123456'); }}>
+              <span className="font-medium text-gray-900">member@company.com</span>
+              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Member</span>
+            </div>
+            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('org@company.com'); setPassword('123456'); }}>
+              <span className="font-medium text-gray-900">org@company.com</span>
+              <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Organizer</span>
+            </div>
+            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('admin@company.com'); setPassword('123456'); }}>
+              <span className="font-medium text-gray-900">admin@company.com</span>
+              <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded">Admin</span>
+            </div>
+          </div>
+          <p className="mt-2 text-center text-gray-400 italic">點擊上述帳號可自動填入</p>
         </div>
       </div>
     </div>

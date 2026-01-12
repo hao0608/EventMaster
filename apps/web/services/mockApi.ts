@@ -42,10 +42,14 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const mockApi = {
   // Auth
-  login: async (email: string): Promise<User> => {
+  login: async (email: string, password: string): Promise<User> => {
     await delay(500);
+    // In a real app, verify password hash here.
+    // For MVP Mock: just ensure password is not empty and user exists.
+    if (!password) throw new Error('Password is required');
+
     const user = MOCK_USERS.find(u => u.email === email);
-    if (!user) throw new Error('User not found');
+    if (!user) throw new Error('Invalid email or password');
     return user;
   },
 
