@@ -100,7 +100,6 @@ paths:
                   type: string
                   format: password
                   example: "password123"
-<<<<<<< HEAD
             examples:
               memberLogin:
                 summary: Login as member
@@ -117,8 +116,6 @@ paths:
                 value:
                   email: "admin@company.com"
                   password: "password123"
-=======
->>>>>>> f663d35 (fix(api): Fix OpenAPI schema P0 and P1 issues)
       responses:
         '200':
           description: 登入成功
@@ -661,18 +658,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-<<<<<<< HEAD
               examples:
                 qrCodeNotFound:
                   summary: QR code not found
                   value:
                     error: "NotFound"
                     message: "找不到此 QR Code 對應的報名紀錄"
-=======
-              example:
-                error: "NotFound"
-                message: "找不到此 QR Code 對應的報名紀錄"
->>>>>>> f663d35 (fix(api): Fix OpenAPI schema P0 and P1 issues)
 
   /walk-in:
     post:
@@ -745,18 +736,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-<<<<<<< HEAD
               examples:
                 eventNotFound:
                   summary: Event not found
                   value:
                     error: "NotFound"
                     message: "找不到指定的活動"
-=======
-              example:
-                error: "NotFound"
-                message: "找不到指定的活動"
->>>>>>> f663d35 (fix(api): Fix OpenAPI schema P0 and P1 issues)
 
   # ==================== Users (Admin Only) ====================
   /users:
