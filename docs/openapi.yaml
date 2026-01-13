@@ -4,21 +4,56 @@ info:
   description: |
     活動報名與驗票系統 Backend API
 
-    **Authentication**: 使用 JWT Bearer Token 進行驗證
+    EventMaster API provides comprehensive event registration and check-in management
+    with QR code-based ticket verification. Built with FastAPI and designed for
+    small to medium-scale events (<200 concurrent users).
 
-    **Role-Based Access Control (RBAC)**:
+    ## Features
+    - JWT-based authentication with secure token management
+    - Role-based access control (member, organizer, admin)
+    - Event creation and management
+    - Automated QR code ticket generation
+    - Real-time check-in verification
+    - Walk-in registration support
+    - Paginated list endpoints for optimal performance
+
+    ## Authentication
+    使用 JWT Bearer Token 進行驗證。在 Authorization header 中傳入 token:
+    ```
+    Authorization: Bearer <your_jwt_token>
+    ```
+
+    ## Role-Based Access Control (RBAC)
     - **member**: 一般使用者，可報名活動、查看自己的報名與 QR Code
     - **organizer**: 主辦/櫃台人員，可查看報名名單並進行驗票
     - **admin**: 系統管理者，可建立活動與指派角色
 
+    ## Rate Limiting
+    - 100 requests per minute per authenticated user
+    - 1000 requests per hour per IP address
+
+    ## Support
+    For API support, please contact support@eventmaster.com or visit our
+    [support portal](https://eventmaster.com/support).
+
   version: 1.0.0
+
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
   contact:
     name: EventMaster Team
     email: support@eventmaster.com
+    url: https://eventmaster.com/support
+
+  termsOfService: https://eventmaster.com/terms
 
 servers:
   - url: https://api.eventmaster.com
     description: Production server
+  - url: https://staging-api.eventmaster.com
+    description: Staging server (for testing and QA)
   - url: http://localhost:8000
     description: Local development server
 
@@ -65,6 +100,22 @@ paths:
                   type: string
                   format: password
                   example: "password123"
+            examples:
+              memberLogin:
+                summary: Login as member
+                value:
+                  email: "member@company.com"
+                  password: "password123"
+              organizerLogin:
+                summary: Login as organizer
+                value:
+                  email: "org@company.com"
+                  password: "password123"
+              adminLogin:
+                summary: Login as admin
+                value:
+                  email: "admin@company.com"
+                  password: "password123"
       responses:
         '200':
           description: 登入成功
@@ -79,6 +130,25 @@ paths:
                     type: string
                     description: JWT Access Token
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              examples:
+                memberLoginSuccess:
+                  summary: Member login successful
+                  value:
+                    user:
+                      id: "550e8400-e29b-41d4-a716-446655440001"
+                      email: "member@company.com"
+                      displayName: "Alice Member"
+                      role: "member"
+                    accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDEiLCJleHAiOjE3MDg5NTM2MDAsInJvbGUiOiJtZW1iZXIifQ.abc123def456"
+                organizerLoginSuccess:
+                  summary: Organizer login successful
+                  value:
+                    user:
+                      id: "550e8400-e29b-41d4-a716-446655440002"
+                      email: "org@company.com"
+                      displayName: "Bob Organizer"
+                      role: "organizer"
+                    accessToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDIiLCJleHAiOjE3MDg5NTM2MDAsInJvbGUiOiJvcmdhbml6ZXIifQ.def456ghi789"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '422':
@@ -159,6 +229,25 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/EventCreateRequest'
+            examples:
+              quarterlyMeeting:
+                summary: Quarterly all-hands meeting
+                value:
+                  title: "Q1 All-Hands Meeting"
+                  description: "Company wide updates and quarterly goals review."
+                  startAt: "2024-03-15T10:00:00Z"
+                  endAt: "2024-03-15T12:00:00Z"
+                  location: "Main Auditorium"
+                  capacity: 200
+              techWorkshop:
+                summary: Technical workshop
+                value:
+                  title: "Advanced FastAPI Workshop"
+                  description: "Hands-on workshop covering FastAPI best practices, async patterns, and testing strategies."
+                  startAt: "2024-04-20T14:00:00Z"
+                  endAt: "2024-04-20T17:00:00Z"
+                  location: "Training Room B"
+                  capacity: 30
       responses:
         '201':
           description: 活動建立成功
@@ -166,6 +255,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Event'
+              examples:
+                eventCreated:
+                  summary: Event created successfully
+                  value:
+                    id: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+                    organizerId: "550e8400-e29b-41d4-a716-446655440002"
+                    title: "Q1 All-Hands Meeting"
+                    description: "Company wide updates and quarterly goals review."
+                    startAt: "2024-03-15T10:00:00Z"
+                    endAt: "2024-03-15T12:00:00Z"
+                    location: "Main Auditorium"
+                    capacity: 200
+                    registeredCount: 0
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -312,6 +414,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Registration'
+              examples:
+                registrationSuccess:
+                  summary: Successfully registered for event
+                  value:
+                    id: "f1e2d3c4-b5a6-4f5e-9d8c-7b6a5e4d3c2b"
+                    eventId: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+                    eventTitle: "Q1 All-Hands Meeting"
+                    eventStartAt: "2024-03-15T10:00:00Z"
+                    userId: "550e8400-e29b-41d4-a716-446655440001"
+                    status: "registered"
+                    qrCode: "QR-a1b2c3d4-550e8400-7f8e9d0a"
+                    createdAt: "2024-03-01T08:30:00Z"
         '400':
           description: 報名失敗 (如重複報名、活動已額滿等)
           content:
@@ -544,9 +658,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "NotFound"
-                message: "找不到此 QR Code 對應的報名紀錄"
+              examples:
+                qrCodeNotFound:
+                  summary: QR code not found
+                  value:
+                    error: "NotFound"
+                    message: "找不到此 QR Code 對應的報名紀錄"
 
   /walk-in:
     post:
@@ -619,9 +736,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "NotFound"
-                message: "找不到指定的活動"
+              examples:
+                eventNotFound:
+                  summary: Event not found
+                  value:
+                    error: "NotFound"
+                    message: "找不到指定的活動"
 
   # ==================== Users (Admin Only) ====================
   /users:
@@ -1043,9 +1163,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: Unauthorized
-            message: Invalid or missing authentication token
+          examples:
+            missingToken:
+              summary: Missing authentication token
+              value:
+                error: Unauthorized
+                message: Invalid or missing authentication token
+            expiredToken:
+              summary: Expired token
+              value:
+                error: Unauthorized
+                message: Token has expired
 
     ForbiddenError:
       description: 權限不足 - 使用者沒有執行此操作的權限
@@ -1053,9 +1181,17 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: Forbidden
-            message: You do not have permission to perform this action
+          examples:
+            insufficientPermissions:
+              summary: Insufficient permissions
+              value:
+                error: Forbidden
+                message: You do not have permission to perform this action
+            wrongRole:
+              summary: Wrong user role
+              value:
+                error: Forbidden
+                message: This action requires organizer or admin role
 
     NotFoundError:
       description: 資源不存在
@@ -1063,9 +1199,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: NotFound
-            message: Resource not found
+          examples:
+            resourceNotFound:
+              summary: Resource not found
+              value:
+                error: NotFound
+                message: Resource not found
 
     ValidationError:
       description: 輸入驗證錯誤
@@ -1073,9 +1212,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
-          example:
-            error: ValidationError
-            message: Invalid input data
-            details:
-              email: Invalid email format
-              capacity: Must be greater than 0
+          examples:
+            validationFailure:
+              summary: Input validation failure
+              value:
+                error: ValidationError
+                message: Invalid input data
+                details:
+                  email: Invalid email format
+                  capacity: Must be greater than 0
