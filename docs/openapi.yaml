@@ -41,6 +41,7 @@ paths:
   # ==================== Authentication ====================
   /auth/login:
     post:
+      operationId: loginUser
       tags:
         - Authentication
       summary: 使用者登入
@@ -63,7 +64,7 @@ paths:
                 password:
                   type: string
                   format: password
-                  example: "123456"
+                  example: "password123"
       responses:
         '200':
           description: 登入成功
@@ -85,6 +86,7 @@ paths:
 
   /auth/me:
     get:
+      operationId: getCurrentUser
       tags:
         - Authentication
       summary: 取得當前使用者資訊
@@ -102,6 +104,7 @@ paths:
   # ==================== Events ====================
   /events:
     get:
+      operationId: listEvents
       tags:
         - Events
       summary: 取得活動列表
@@ -110,21 +113,8 @@ paths:
         - BearerAuth: []
         - {}
       parameters:
-        - name: limit
-          in: query
-          description: 每頁筆數
-          schema:
-            type: integer
-            default: 20
-            minimum: 1
-            maximum: 100
-        - name: offset
-          in: query
-          description: 跳過筆數 (分頁用)
-          schema:
-            type: integer
-            default: 0
-            minimum: 0
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         '200':
           description: 成功取得活動列表
@@ -132,17 +122,31 @@ paths:
             application/json:
               schema:
                 type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
                 properties:
-                  events:
+                  items:
                     type: array
                     items:
                       $ref: '#/components/schemas/Event'
                   total:
                     type: integer
-                    description: 總筆數
+                    description: 總筆數 (所有頁面的總數量)
                     example: 42
+                  limit:
+                    type: integer
+                    description: 每頁最大筆數
+                    example: 20
+                  offset:
+                    type: integer
+                    description: 跳過的筆數
+                    example: 0
 
     post:
+      operationId: createEvent
       tags:
         - Events
       summary: 建立新活動
@@ -171,21 +175,45 @@ paths:
 
   /events/managed:
     get:
+      operationId: getManagedEvents
       tags:
         - Events
       summary: 取得自己管理的活動
       description: 取得當前使用者管理的活動 (Organizer 取得自己建立的活動，Admin 取得所有活動)
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         '200':
           description: 成功取得管理的活動列表
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Event'
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  total:
+                    type: integer
+                    description: 總筆數
+                    example: 5
+                  limit:
+                    type: integer
+                    description: 每頁最大筆數
+                    example: 20
+                  offset:
+                    type: integer
+                    description: 跳過的筆數
+                    example: 0
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -193,6 +221,7 @@ paths:
 
   /events/{eventId}:
     get:
+      operationId: getEvent
       tags:
         - Events
       summary: 取得活動詳細資訊
@@ -213,6 +242,7 @@ paths:
           $ref: '#/components/responses/NotFoundError'
 
     patch:
+      operationId: updateEvent
       tags:
         - Events
       summary: 更新活動資訊
@@ -244,6 +274,7 @@ paths:
           $ref: '#/components/responses/ValidationError'
 
     delete:
+      operationId: deleteEvent
       tags:
         - Events
       summary: 刪除活動
@@ -265,6 +296,7 @@ paths:
   # ==================== Registrations ====================
   /events/{eventId}/registrations:
     post:
+      operationId: registerForEvent
       tags:
         - Registrations
       summary: 報名活動
@@ -302,6 +334,7 @@ paths:
 
   /events/{eventId}/attendees:
     get:
+      operationId: getEventAttendees
       tags:
         - Registrations
       summary: 取得活動報名名單
@@ -310,15 +343,37 @@ paths:
         - BearerAuth: []
       parameters:
         - $ref: '#/components/parameters/EventIdParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         '200':
           description: 成功取得報名名單
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Attendee'
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Attendee'
+                  total:
+                    type: integer
+                    description: 總報名人數
+                    example: 45
+                  limit:
+                    type: integer
+                    description: 每頁最大筆數
+                    example: 20
+                  offset:
+                    type: integer
+                    description: 跳過的筆數
+                    example: 0
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -328,26 +383,51 @@ paths:
 
   /me/registrations:
     get:
+      operationId: getMyRegistrations
       tags:
         - Registrations
       summary: 取得我的報名紀錄
       description: 取得當前使用者的所有報名紀錄
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         '200':
           description: 成功取得報名紀錄
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Registration'
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Registration'
+                  total:
+                    type: integer
+                    description: 總報名筆數
+                    example: 3
+                  limit:
+                    type: integer
+                    description: 每頁最大筆數
+                    example: 20
+                  offset:
+                    type: integer
+                    description: 跳過的筆數
+                    example: 0
         '401':
           $ref: '#/components/responses/UnauthorizedError'
 
   /registrations/{registrationId}:
     delete:
+      operationId: cancelRegistration
       tags:
         - Registrations
       summary: 取消報名
@@ -384,6 +464,7 @@ paths:
   # ==================== Check-in / Verification ====================
   /verify:
     post:
+      operationId: verifyTicket
       tags:
         - Check-in
       summary: 驗票與 Check-in
@@ -405,18 +486,71 @@ paths:
                   example: QR-e1-u1-1234
       responses:
         '200':
-          description: 驗票結果 (成功或失敗皆回傳 200，透過 success 欄位判斷)
+          description: 驗票成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CheckInResult'
+                type: object
+                required:
+                  - registration
+                  - message
+                properties:
+                  registration:
+                    $ref: '#/components/schemas/Registration'
+                  message:
+                    type: string
+                    example: "Check-in successful!"
+        '400':
+          description: 驗票失敗 (QR code invalid, already checked in, etc.)
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ErrorResponse'
+                  - type: object
+                    properties:
+                      code:
+                        type: string
+                        enum:
+                          - INVALID_QR_CODE
+                          - ALREADY_CHECKED_IN
+                          - TICKET_CANCELLED
+              examples:
+                alreadyCheckedIn:
+                  summary: Ticket already checked in
+                  value:
+                    error: "AlreadyCheckedIn"
+                    message: "此票券已經完成驗票"
+                    code: "ALREADY_CHECKED_IN"
+                invalidQrCode:
+                  summary: Invalid QR code
+                  value:
+                    error: "InvalidQrCode"
+                    message: "無效的 QR Code"
+                    code: "INVALID_QR_CODE"
+                ticketCancelled:
+                  summary: Ticket was cancelled
+                  value:
+                    error: "TicketCancelled"
+                    message: "此票券已被取消"
+                    code: "TICKET_CANCELLED"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: QR Code 不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "NotFound"
+                message: "找不到此 QR Code 對應的報名紀錄"
 
   /walk-in:
     post:
+      operationId: walkInRegistration
       tags:
         - Check-in
       summary: 現場報名與 Check-in
@@ -437,7 +571,7 @@ paths:
                   type: string
                   format: uuid
                   description: 活動 ID
-                  example: e1
+                  example: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
                 email:
                   type: string
                   format: email
@@ -448,37 +582,89 @@ paths:
                   description: 使用者顯示名稱 (選填，若未提供則使用 Email 前綴)
                   example: Walk-in User
       responses:
-        '200':
-          description: 現場報名結果
+        '201':
+          description: 現場報名成功
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CheckInResult'
+                type: object
+                required:
+                  - registration
+                  - message
+                properties:
+                  registration:
+                    $ref: '#/components/schemas/Registration'
+                  message:
+                    type: string
+                    example: "Walk-in registration and check-in successful!"
+        '400':
+          description: 現場報名失敗 (活動已額滿等)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                eventFull:
+                  summary: Event is at capacity
+                  value:
+                    error: "EventFull"
+                    message: "活動已額滿"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
         '404':
-          $ref: '#/components/responses/NotFoundError'
+          description: 活動不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "NotFound"
+                message: "找不到指定的活動"
 
   # ==================== Users (Admin Only) ====================
   /users:
     get:
+      operationId: listUsers
       tags:
         - Users
       summary: 取得所有使用者
       description: 取得系統中所有使用者清單 (需要 Admin 權限)
       security:
         - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
       responses:
         '200':
           description: 成功取得使用者清單
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/User'
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  total:
+                    type: integer
+                    description: 總使用者數
+                    example: 150
+                  limit:
+                    type: integer
+                    description: 每頁最大筆數
+                    example: 20
+                  offset:
+                    type: integer
+                    description: 跳過的筆數
+                    example: 0
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -486,6 +672,7 @@ paths:
 
   /users/{userId}/role:
     patch:
+      operationId: updateUserRole
       tags:
         - Users
       summary: 更新使用者角色
@@ -547,7 +734,28 @@ components:
       schema:
         type: string
         format: uuid
-        example: e1
+        example: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+
+    LimitParam:
+      name: limit
+      in: query
+      description: 每頁最大筆數
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      example: 20
+
+    OffsetParam:
+      name: offset
+      in: query
+      description: 跳過筆數 (用於分頁)
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+      example: 0
 
   schemas:
     # ========== User Related ==========
@@ -575,7 +783,7 @@ components:
           type: string
           format: uuid
           description: 使用者 ID
-          example: u1
+          example: "550e8400-e29b-41d4-a716-446655440001"
         email:
           type: string
           format: email
@@ -606,12 +814,12 @@ components:
           type: string
           format: uuid
           description: 活動 ID
-          example: e1
+          example: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
         organizerId:
           type: string
           format: uuid
           description: 主辦方 User ID
-          example: u2
+          example: "550e8400-e29b-41d4-a716-446655440002"
         title:
           type: string
           description: 活動標題
@@ -739,12 +947,12 @@ components:
           type: string
           format: uuid
           description: 報名紀錄 ID
-          example: r1
+          example: "f1e2d3c4-b5a6-4f5e-9d8c-7b6a5e4d3c2b"
         eventId:
           type: string
           format: uuid
           description: 活動 ID
-          example: e1
+          example: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
         eventTitle:
           type: string
           description: 活動標題 (Denormalized)
@@ -758,7 +966,7 @@ components:
           type: string
           format: uuid
           description: 使用者 ID
-          example: u1
+          example: "550e8400-e29b-41d4-a716-446655440001"
         status:
           $ref: '#/components/schemas/RegistrationStatus'
         qrCode:
