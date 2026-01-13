@@ -113,10 +113,10 @@ def walk_in_register(
         # Create new user
         display_name = request.display_name or request.email.split('@')[0]
         user = User(
-            id=f"u{uuid.uuid4().hex[:8]}",
+            id=str(uuid.uuid4()),
             email=request.email,
             display_name=display_name,
-            hashed_password=get_password_hash(f"temp{uuid.uuid4().hex[:8]}"),  # Temporary password
+            hashed_password=get_password_hash(f"temp{uuid.uuid4().hex[:16]}"),  # Temporary password
             role=UserRole.MEMBER
         )
         db.add(user)
@@ -152,7 +152,7 @@ def walk_in_register(
 
     # Create new registration and check in
     registration = Registration(
-        id=f"r{uuid.uuid4().hex[:8]}",
+        id=str(uuid.uuid4()),
         event_id=request.event_id,
         user_id=user.id,
         event_title=event.title,

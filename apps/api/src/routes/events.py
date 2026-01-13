@@ -34,8 +34,10 @@ def get_events(
     events = query.offset(offset).limit(limit).all()
 
     return EventListResponse(
-        events=[EventResponse.model_validate(e) for e in events],
-        total=total
+        items=[EventResponse.model_validate(e) for e in events],
+        total=total,
+        limit=limit,
+        offset=offset
     )
 
 
@@ -102,7 +104,7 @@ def create_event(
 
     # Create event
     event = Event(
-        id=f"e{uuid.uuid4().hex[:8]}",
+        id=str(uuid.uuid4()),
         organizer_id=current_user.id,
         title=event_data.title,
         description=event_data.description,

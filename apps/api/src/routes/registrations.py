@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from ..database import get_db
 from ..models.user import User, UserRole
@@ -61,14 +61,14 @@ def register_for_event(
 
     # Create registration
     registration = Registration(
-        id=f"r{uuid.uuid4().hex[:8]}",
+        id=str(uuid.uuid4()),
         event_id=event_id,
         user_id=current_user.id,
         event_title=event.title,
         event_start_at=event.start_at,
         status=RegistrationStatus.REGISTERED,
-        qr_code=f"QR-{event_id}-{current_user.id}-{uuid.uuid4().hex[:4]}",
-        created_at=datetime.utcnow()
+        qr_code=f"QR-{event_id}-{current_user.id}-{uuid.uuid4().hex[:8]}",
+        created_at=datetime.now(timezone.utc)
     )
 
     event.registered_count += 1

@@ -41,5 +41,7 @@ class EventResponse(EventBase):
 
 class EventListResponse(BaseModel):
     """Schema for event list response with pagination"""
-    events: list[EventResponse]
+    items: list[EventResponse]
     total: int
+    limit: int
+    offset: int

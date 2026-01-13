@@ -1,4 +1,5 @@
 """FastAPI application entry point"""
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
@@ -11,6 +12,17 @@ from src.routes import (
     users_router
 )
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Application lifespan handler"""
+    # Startup
+    init_db()
+    yield
+    # Shutdown (cleanup if needed)
+    pass
+
+
 # Create FastAPI application
 app = FastAPI(
     title=settings.APP_NAME,
@@ -18,7 +30,8 @@ app = FastAPI(
     description="活動報名與驗票系統 Backend API",
     docs_url="/docs",
     redoc_url="/redoc",
-    openapi_url="/openapi.json"
+    openapi_url="/openapi.json",
+    lifespan=lifespan
 )
 
 # Configure CORS
@@ -37,12 +50,6 @@ app.include_router(events_router)
 app.include_router(registrations_router)
 app.include_router(checkin_router)
 app.include_router(users_router)
-
-
-@app.on_event("startup")
-def on_startup():
-    """Initialize database on startup"""
-    init_db()
 
 
 @app.get("/", tags=["Health"])
