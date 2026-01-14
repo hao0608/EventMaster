@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.core.config import settings
+from src.core.logging import setup_logging
 from src.database import init_db
 from src.routes import (
     auth_router,
@@ -17,6 +18,7 @@ from src.routes import (
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
     # Startup
+    setup_logging()
     init_db()
     yield
     # Shutdown (cleanup if needed)

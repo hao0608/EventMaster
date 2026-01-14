@@ -5,6 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from typing import Optional, List
 from datetime import datetime
 import uuid
+import logging
 from ..database import get_db
 from ..models.user import User, UserRole
 from ..models.event import Event
@@ -16,6 +17,7 @@ from ..core.deps import (
 )
 
 router = APIRouter(prefix="/events", tags=["Events"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=EventListResponse)
@@ -130,14 +132,17 @@ def create_event(
         db.add(event)
         db.commit()
         db.refresh(event)
+        logger.info(f"Event created: {event.id} by user {current_user.id}")
     except IntegrityError as e:
         db.rollback()
+        logger.error(f"IntegrityError creating event: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Event with this ID already exists"
         )
     except SQLAlchemyError as e:
         db.rollback()
+        logger.error(f"Database error creating event: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred while creating event"
@@ -192,8 +197,10 @@ def update_event(
     try:
         db.commit()
         db.refresh(event)
+        logger.info(f"Event updated: {event.id} by user {current_user.id}")
     except SQLAlchemyError as e:
         db.rollback()
+        logger.error(f"Database error updating event {event_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred while updating event"
@@ -231,8 +238,10 @@ def delete_event(
     try:
         db.delete(event)
         db.commit()
+        logger.info(f"Event deleted: {event_id} by user {current_user.id}")
     except SQLAlchemyError as e:
         db.rollback()
+        logger.error(f"Database error deleting event {event_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Database error occurred while deleting event"
