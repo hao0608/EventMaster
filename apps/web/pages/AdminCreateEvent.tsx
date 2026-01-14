@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockApi } from '../services/mockApi';
 import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../types';
 
 export const AdminCreateEvent: React.FC = () => {
   const navigate = useNavigate();
@@ -30,7 +31,12 @@ export const AdminCreateEvent: React.FC = () => {
         organizerId: user.id, // Assign current user as owner
         capacity: Number(formData.capacity)
       });
-      alert('活動建立成功！');
+      
+      if (user.role === UserRole.ADMIN) {
+        alert('活動建立成功！(已自動發布)');
+      } else {
+        alert('活動建立成功！您的活動目前為「待審核」狀態，需經管理員核准後才會公開顯示。');
+      }
       navigate('/events');
     } catch (error) {
       alert('建立活動時發生錯誤');
@@ -40,6 +46,22 @@ export const AdminCreateEvent: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">建立新活動</h1>
+      
+      {user?.role === UserRole.ORGANIZER && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <i className="fa-solid fa-triangle-exclamation text-yellow-400"></i>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                注意：作為主辦方，您建立的活動需經由管理員審核通過後，才會公開在活動列表上。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
         
         <div>
@@ -117,7 +139,7 @@ export const AdminCreateEvent: React.FC = () => {
 
         <div className="pt-4">
           <button type="submit" className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none">
-            發布活動
+            {user?.role === UserRole.ADMIN ? '發布活動' : '送出審核'}
           </button>
         </div>
 

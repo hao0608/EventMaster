@@ -1,4 +1,4 @@
-import { User, UserRole, Event, Registration, RegistrationStatus, CheckInResult, Attendee } from '../types';
+import { User, UserRole, Event, EventStatus, Registration, RegistrationStatus, CheckInResult, Attendee } from '../types';
 
 // --- Mock Data ---
 
@@ -18,7 +18,8 @@ let MOCK_EVENTS: Event[] = [
     endAt: '2023-11-15T12:00:00',
     location: 'Main Auditorium',
     capacity: 200,
-    registeredCount: 45
+    registeredCount: 45,
+    status: EventStatus.PUBLISHED
   },
   {
     id: 'e2',
@@ -29,7 +30,8 @@ let MOCK_EVENTS: Event[] = [
     endAt: '2023-11-20T15:30:00',
     location: 'Meeting Room 301',
     capacity: 50,
-    registeredCount: 48
+    registeredCount: 48,
+    status: EventStatus.PUBLISHED
   }
 ];
 
@@ -66,14 +68,22 @@ export const mockApi = {
   // Events
   getEvents: async (): Promise<Event[]> => {
     await delay(400);
-    return [...MOCK_EVENTS];
+    // Only return published events for the public list
+    return MOCK_EVENTS.filter(e => e.status === EventStatus.PUBLISHED);
   },
   
+  // New method for admins to see all events (for approval)
+  getAllEventsForAdmin: async (): Promise<Event[]> => {
+    await delay(400);
+    return [...MOCK_EVENTS];
+  },
+
   getManagedEvents: async (userId: string, role: UserRole): Promise<Event[]> => {
     await delay(300);
     if (role === UserRole.ADMIN) {
         return [...MOCK_EVENTS];
     }
+    // Organizers can see all their events, regardless of status
     return MOCK_EVENTS.filter(e => e.organizerId === userId);
   },
 
@@ -82,12 +92,21 @@ export const mockApi = {
     return MOCK_EVENTS.find(e => e.id === id);
   },
 
-  createEvent: async (eventData: Omit<Event, 'id' | 'registeredCount'>): Promise<Event> => {
+  createEvent: async (eventData: Omit<Event, 'id' | 'registeredCount' | 'status'>): Promise<Event> => {
     await delay(500);
+    
+    // Determine initial status based on creator's role
+    const organizer = MOCK_USERS.find(u => u.id === eventData.organizerId);
+    // Admin events are auto-published, Organizer events are pending
+    const initialStatus = (organizer?.role === UserRole.ADMIN) 
+        ? EventStatus.PUBLISHED 
+        : EventStatus.PENDING;
+
     const newEvent: Event = {
       ...eventData,
       id: `e${Date.now()}`,
-      registeredCount: 0
+      registeredCount: 0,
+      status: initialStatus
     };
     MOCK_EVENTS.push(newEvent);
     return newEvent;
@@ -125,6 +144,10 @@ export const mockApi = {
     const event = MOCK_EVENTS.find(e => e.id === eventId);
     if (!event) throw new Error('Event not found');
     
+    if (event.status !== EventStatus.PUBLISHED) {
+        throw new Error('Cannot register for an unpublished event.');
+    }
+
     // Check if user previously cancelled, if so, reactivate? 
     // For simplicity, we just check active registrations.
     const existing = MOCK_REGISTRATIONS.find(r => r.eventId === eventId && r.userId === userId);

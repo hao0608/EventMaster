@@ -11,6 +11,12 @@ export interface User {
   role: UserRole;
 }
 
+export enum EventStatus {
+  PENDING = 'pending',
+  PUBLISHED = 'published',
+  REJECTED = 'rejected'
+}
+
 export interface Event {
   id: string;
   organizerId: string; // The owner of the event
@@ -21,6 +27,7 @@ export interface Event {
   location: string;
   capacity: number;
   registeredCount: number;
+  status: EventStatus; // New field for approval workflow
 }
 
 export enum RegistrationStatus {

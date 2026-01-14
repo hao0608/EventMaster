@@ -11,6 +11,7 @@ import { MyTickets } from './pages/MyTickets';
 import { OrganizerVerify } from './pages/OrganizerVerify';
 import { AdminCreateEvent } from './pages/AdminCreateEvent';
 import { AdminUsers } from './pages/AdminUsers';
+import { AdminEventApprovals } from './pages/AdminEventApprovals';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { UserRole } from './types';
 
@@ -71,6 +72,11 @@ const App: React.FC = () => {
             <Route path="/admin/users" element={
               <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
                 <AdminUsers />
+              </ProtectedRoute>
+            } />
+             <Route path="/admin/approvals" element={
+              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                <AdminEventApprovals />
               </ProtectedRoute>
             } />
             

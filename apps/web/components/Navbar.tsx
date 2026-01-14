@@ -49,9 +49,15 @@ export const Navbar: React.FC = () => {
 
               {/* Admin Only Links */}
               {user.role === UserRole.ADMIN && (
+                <>
+                  <Link to="/admin/approvals" className="hover:bg-blue-500 px-3 py-2 rounded-md text-sm font-medium relative">
+                    審核活動
+                    <span className="absolute top-1 right-0 w-2 h-2 bg-red-400 rounded-full animate-pulse"></span>
+                  </Link>
                   <Link to="/admin/users" className="hover:bg-blue-500 px-3 py-2 rounded-md text-sm font-medium">
                     用戶權限
                   </Link>
+                </>
               )}
             </div>
           </div>
