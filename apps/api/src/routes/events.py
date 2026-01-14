@@ -1,9 +1,11 @@
 """Event management routes"""
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from typing import Optional, List
 from datetime import datetime
 import uuid
+import logging
 from ..database import get_db
 from ..models.user import User, UserRole
 from ..models.event import Event
@@ -15,6 +17,7 @@ from ..core.deps import (
 )
 
 router = APIRouter(prefix="/events", tags=["Events"])
+logger = logging.getLogger(__name__)
 
 
 @router.get("", response_model=EventListResponse)
@@ -34,13 +37,17 @@ def get_events(
     events = query.offset(offset).limit(limit).all()
 
     return EventListResponse(
-        events=[EventResponse.model_validate(e) for e in events],
-        total=total
+        items=[EventResponse.model_validate(e) for e in events],
+        total=total,
+        limit=limit,
+        offset=offset
     )
 
 
-@router.get("/managed", response_model=List[EventResponse])
+@router.get("/managed", response_model=EventListResponse)
 def get_managed_events(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(require_organizer_or_admin),
     db: Session = Depends(get_db)
 ):
@@ -51,13 +58,21 @@ def get_managed_events(
     - Admins see all events
     """
     if current_user.role == UserRole.ADMIN:
-        events = db.query(Event).order_by(Event.start_at.desc()).all()
+        query = db.query(Event).order_by(Event.start_at.desc())
     else:
-        events = db.query(Event).filter(
+        query = db.query(Event).filter(
             Event.organizer_id == current_user.id
-        ).order_by(Event.start_at.desc()).all()
+        ).order_by(Event.start_at.desc())
 
-    return [EventResponse.model_validate(e) for e in events]
+    total = query.count()
+    events = query.offset(offset).limit(limit).all()
+
+    return EventListResponse(
+        items=[EventResponse.model_validate(e) for e in events],
+        total=total,
+        limit=limit,
+        offset=offset
+    )
 
 
 @router.get("/{event_id}", response_model=EventResponse)
@@ -102,7 +117,7 @@ def create_event(
 
     # Create event
     event = Event(
-        id=f"e{uuid.uuid4().hex[:8]}",
+        id=str(uuid.uuid4()),
         organizer_id=current_user.id,
         title=event_data.title,
         description=event_data.description,
@@ -113,9 +128,25 @@ def create_event(
         registered_count=0
     )
 
-    db.add(event)
-    db.commit()
-    db.refresh(event)
+    try:
+        db.add(event)
+        db.commit()
+        db.refresh(event)
+        logger.info(f"Event created: {event.id} by user {current_user.id}")
+    except IntegrityError as e:
+        db.rollback()
+        logger.error(f"IntegrityError creating event: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Event with this ID already exists"
+        )
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Database error creating event: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while creating event"
+        )
 
     return EventResponse.model_validate(event)
 
@@ -163,8 +194,17 @@ def update_event(
     for key, value in update_data.items():
         setattr(event, key, value)
 
-    db.commit()
-    db.refresh(event)
+    try:
+        db.commit()
+        db.refresh(event)
+        logger.info(f"Event updated: {event.id} by user {current_user.id}")
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Database error updating event {event_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while updating event"
+        )
 
     return EventResponse.model_validate(event)
 
@@ -195,7 +235,16 @@ def delete_event(
             detail="You do not have permission to delete this event"
         )
 
-    db.delete(event)
-    db.commit()
+    try:
+        db.delete(event)
+        db.commit()
+        logger.info(f"Event deleted: {event_id} by user {current_user.id}")
+    except SQLAlchemyError as e:
+        db.rollback()
+        logger.error(f"Database error deleting event {event_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while deleting event"
+        )
 
     return None

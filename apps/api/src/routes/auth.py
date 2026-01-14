@@ -1,6 +1,7 @@
 """Authentication routes"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+import logging
 from ..database import get_db
 from ..models.user import User
 from ..schemas.auth import LoginRequest, LoginResponse
@@ -9,6 +10,7 @@ from ..core.security import verify_password, create_access_token
 from ..core.deps import get_current_user
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+logger = logging.getLogger(__name__)
 
 
 @router.post("/login", response_model=LoginResponse)
@@ -25,6 +27,7 @@ def login(
     user = db.query(User).filter(User.email == credentials.email).first()
 
     if not user:
+        logger.warning(f"Login attempt with non-existent email: {credentials.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
@@ -32,6 +35,7 @@ def login(
 
     # Verify password
     if not verify_password(credentials.password, user.hashed_password):
+        logger.warning(f"Failed login attempt for user: {user.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
@@ -39,6 +43,8 @@ def login(
 
     # Create access token
     access_token = create_access_token(data={"sub": user.id})
+
+    logger.info(f"Successful login: {user.email} (role: {user.role})")
 
     return LoginResponse(
         user=UserResponse.model_validate(user),

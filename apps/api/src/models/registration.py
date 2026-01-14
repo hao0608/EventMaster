@@ -2,7 +2,7 @@
 import enum
 from sqlalchemy import Column, String, ForeignKey, DateTime, Enum, Index
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 from ..database import Base
 
 
@@ -23,7 +23,7 @@ class Registration(Base):
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     status = Column(Enum(RegistrationStatus), default=RegistrationStatus.REGISTERED, nullable=False)
     qr_code = Column(String, unique=True, nullable=False, index=True)
-    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Denormalized fields for quick access
     event_title = Column(String(200), nullable=False)

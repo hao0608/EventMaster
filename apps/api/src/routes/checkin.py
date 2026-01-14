@@ -1,7 +1,8 @@
 """Check-in and verification routes"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from datetime import datetime, timezone
 import uuid
 from ..database import get_db
 from ..models.user import User, UserRole
@@ -70,8 +71,16 @@ def verify_ticket(
 
     # Check in
     registration.status = RegistrationStatus.CHECKED_IN
-    db.commit()
-    db.refresh(registration)
+
+    try:
+        db.commit()
+        db.refresh(registration)
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while checking in"
+        )
 
     return CheckInResult(
         success=True,
@@ -113,10 +122,10 @@ def walk_in_register(
         # Create new user
         display_name = request.display_name or request.email.split('@')[0]
         user = User(
-            id=f"u{uuid.uuid4().hex[:8]}",
+            id=str(uuid.uuid4()),
             email=request.email,
             display_name=display_name,
-            hashed_password=get_password_hash(f"temp{uuid.uuid4().hex[:8]}"),  # Temporary password
+            hashed_password=get_password_hash(f"temp{uuid.uuid4().hex[:16]}"),  # Temporary password
             role=UserRole.MEMBER
         )
         db.add(user)
@@ -141,8 +150,16 @@ def walk_in_register(
             event.registered_count += 1
 
         registration.status = RegistrationStatus.CHECKED_IN
-        db.commit()
-        db.refresh(registration)
+
+        try:
+            db.commit()
+            db.refresh(registration)
+        except SQLAlchemyError as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Database error occurred while checking in existing registration"
+            )
 
         return CheckInResult(
             success=True,
@@ -152,21 +169,34 @@ def walk_in_register(
 
     # Create new registration and check in
     registration = Registration(
-        id=f"r{uuid.uuid4().hex[:8]}",
+        id=str(uuid.uuid4()),
         event_id=request.event_id,
         user_id=user.id,
         event_title=event.title,
         event_start_at=event.start_at,
         status=RegistrationStatus.CHECKED_IN,
         qr_code=f"QR-{request.event_id}-{user.id}-WALKIN",
-        created_at=datetime.utcnow()
+        created_at=datetime.now(timezone.utc)
     )
 
     event.registered_count += 1
 
-    db.add(registration)
-    db.commit()
-    db.refresh(registration)
+    try:
+        db.add(registration)
+        db.commit()
+        db.refresh(registration)
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Registration with this ID already exists"
+        )
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while creating walk-in registration"
+        )
 
     return CheckInResult(
         success=True,

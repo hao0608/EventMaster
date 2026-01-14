@@ -1,14 +1,20 @@
 """Registration management routes"""
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from typing import List
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from ..database import get_db
 from ..models.user import User, UserRole
 from ..models.event import Event
 from ..models.registration import Registration, RegistrationStatus
-from ..schemas.registration import RegistrationResponse, AttendeeResponse
+from ..schemas.registration import (
+    RegistrationResponse,
+    AttendeeResponse,
+    RegistrationListResponse,
+    AttendeeListResponse
+)
 from ..core.deps import get_current_user, require_organizer_or_admin
 
 router = APIRouter(tags=["Registrations"])
@@ -41,10 +47,17 @@ def register_for_event(
         if existing_reg.status == RegistrationStatus.CANCELLED:
             # Reactivate cancelled registration
             existing_reg.status = RegistrationStatus.REGISTERED
-            existing_reg.created_at = datetime.utcnow()
+            existing_reg.created_at = datetime.now(timezone.utc)
             event.registered_count += 1
-            db.commit()
-            db.refresh(existing_reg)
+            try:
+                db.commit()
+                db.refresh(existing_reg)
+            except SQLAlchemyError as e:
+                db.rollback()
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Database error occurred while reactivating registration"
+                )
             return RegistrationResponse.model_validate(existing_reg)
         else:
             raise HTTPException(
@@ -61,38 +74,61 @@ def register_for_event(
 
     # Create registration
     registration = Registration(
-        id=f"r{uuid.uuid4().hex[:8]}",
+        id=str(uuid.uuid4()),
         event_id=event_id,
         user_id=current_user.id,
         event_title=event.title,
         event_start_at=event.start_at,
         status=RegistrationStatus.REGISTERED,
-        qr_code=f"QR-{event_id}-{current_user.id}-{uuid.uuid4().hex[:4]}",
-        created_at=datetime.utcnow()
+        qr_code=f"QR-{event_id}-{current_user.id}-{uuid.uuid4().hex[:8]}",
+        created_at=datetime.now(timezone.utc)
     )
 
     event.registered_count += 1
 
-    db.add(registration)
-    db.commit()
-    db.refresh(registration)
+    try:
+        db.add(registration)
+        db.commit()
+        db.refresh(registration)
+    except IntegrityError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Registration with this ID already exists"
+        )
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while creating registration"
+        )
 
     return RegistrationResponse.model_validate(registration)
 
 
-@router.get("/me/registrations", response_model=List[RegistrationResponse])
+@router.get("/me/registrations", response_model=RegistrationListResponse)
 def get_my_registrations(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Get current user's registrations
     """
-    registrations = db.query(Registration).filter(
+    query = db.query(Registration).filter(
         Registration.user_id == current_user.id
-    ).order_by(Registration.created_at.desc()).all()
+    ).order_by(Registration.created_at.desc())
 
-    return [RegistrationResponse.model_validate(r) for r in registrations]
+    total = query.count()
+    registrations = query.offset(offset).limit(limit).all()
+
+    return RegistrationListResponse(
+        items=[RegistrationResponse.model_validate(r) for r in registrations],
+        total=total,
+        limit=limit,
+        offset=offset
+    )
 
 
 @router.delete("/registrations/{registration_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -143,14 +179,23 @@ def cancel_registration(
     if event and event.registered_count > 0:
         event.registered_count -= 1
 
-    db.commit()
+    try:
+        db.commit()
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database error occurred while cancelling registration"
+        )
 
     return None
 
 
-@router.get("/events/{event_id}/attendees", response_model=List[AttendeeResponse])
+@router.get("/events/{event_id}/attendees", response_model=AttendeeListResponse)
 def get_event_attendees(
     event_id: str,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(require_organizer_or_admin),
     db: Session = Depends(get_db)
 ):
@@ -175,9 +220,12 @@ def get_event_attendees(
         )
 
     # Get registrations with user info
-    registrations = db.query(Registration).filter(
+    query = db.query(Registration).filter(
         Registration.event_id == event_id
-    ).order_by(Registration.created_at.desc()).all()
+    ).order_by(Registration.created_at.desc())
+
+    total = query.count()
+    registrations = query.offset(offset).limit(limit).all()
 
     attendees = []
     for reg in registrations:
@@ -186,4 +234,9 @@ def get_event_attendees(
         attendee_data["user_email"] = reg.user.email
         attendees.append(AttendeeResponse(**attendee_data))
 
-    return attendees
+    return AttendeeListResponse(
+        items=attendees,
+        total=total,
+        limit=limit,
+        offset=offset
+    )
