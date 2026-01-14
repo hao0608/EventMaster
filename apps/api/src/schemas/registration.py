@@ -35,3 +35,19 @@ class AttendeeResponse(RegistrationResponse):
     """Schema for attendee response (registration with user info)"""
     user_display_name: str
     user_email: str
+
+
+class RegistrationListResponse(BaseModel):
+    """Schema for registration list response with pagination"""
+    items: list[RegistrationResponse]
+    total: int
+    limit: int
+    offset: int
+
+
+class AttendeeListResponse(BaseModel):
+    """Schema for attendee list response with pagination"""
+    items: list[AttendeeResponse]
+    total: int
+    limit: int
+    offset: int

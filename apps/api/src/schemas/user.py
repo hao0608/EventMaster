@@ -27,3 +27,11 @@ class UserResponse(UserBase):
 class UserRoleUpdate(BaseModel):
     """Schema for updating user role"""
     role: UserRole
+
+
+class UserListResponse(BaseModel):
+    """Schema for user list response with pagination"""
+    items: list[UserResponse]
+    total: int
+    limit: int
+    offset: int
