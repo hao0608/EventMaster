@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from typing import Optional
 from ..core.sanitize import sanitize_string, sanitize_multiline
+from ..models.event import EventStatus
 
 
 class EventBase(BaseModel):
@@ -63,6 +64,7 @@ class EventResponse(EventBase):
     id: str
     organizer_id: str
     registered_count: int
+    status: EventStatus
 
     class Config:
         from_attributes = True

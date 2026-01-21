@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 import { CheckInResult, Event } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,9 +25,9 @@ export const OrganizerVerify: React.FC = () => {
   useEffect(() => {
     // Only load events managed by this user (or all if admin) for Walk-in selection
     if (user) {
-        mockApi.getManagedEvents(user.id, user.role).then(data => {
-            setEvents(data);
-            if (data.length > 0) setSelectedEventId(data[0].id);
+        api.getManagedEvents().then(data => {
+            setEvents(data.items);
+            if (data.items.length > 0) setSelectedEventId(data.items[0].id);
         });
     }
   }, [user]);
@@ -42,7 +42,7 @@ export const OrganizerVerify: React.FC = () => {
 
     try {
       // Pass verifier ID for ownership check
-      const res = await mockApi.verifyTicket(inputCode, user.id, user.role);
+      const res = await api.verifyTicket(inputCode);
       setVerifyResult(res);
       if (res.success) {
         setInputCode(''); 
@@ -64,7 +64,7 @@ export const OrganizerVerify: React.FC = () => {
 
     try {
       // Pass verifier ID for ownership check
-      const res = await mockApi.walkInRegister(selectedEventId, walkInEmail, walkInName, user.id, user.role);
+      const res = await api.walkInRegister(selectedEventId, walkInEmail, walkInName);
       setWalkInResult(res);
       if (res.success) {
         setWalkInEmail('');
@@ -84,8 +84,12 @@ export const OrganizerVerify: React.FC = () => {
     if (msg.includes('Ticket already used')) return '此票券已使用過 (已簽到)';
     if (msg.includes('Ticket was cancelled')) return '此票券已取消';
     if (msg.includes('Walk-in Registered')) return '現場報名並簽到成功！';
-    if (msg.includes('Existing registration found')) return '找到現有報名資料，簽到成功！';
+    if (msg.includes('Existing registration found') || msg.includes('Existing registration checked in')) return '找到現有報名資料，簽到成功！';
     if (msg.includes('User already checked in')) return '此用戶已經簽到過了。';
+    if (msg.includes('Event is at full capacity')) return '活動已額滿，無法現場報名。';
+    if (msg.includes('Event is not published')) return '活動尚未發布，無法現場報名。';
+    if (msg.includes('Event not found')) return '找不到指定的活動。';
+    if (msg.includes('Forbidden')) return '權限不足，無法執行此操作。';
     // Return original message if it's a permission error or unknown
     return msg;
   };

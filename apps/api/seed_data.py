@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta
 from src.database import SessionLocal, init_db
 from src.models.user import User, UserRole
-from src.models.event import Event
+from src.models.event import Event, EventStatus
 from src.models.registration import Registration, RegistrationStatus
 from src.core.security import get_password_hash
 
@@ -66,7 +66,8 @@ def seed_database():
                 end_at=now + timedelta(days=5, hours=12),
                 location="Main Auditorium",
                 capacity=200,
-                registered_count=2
+                registered_count=2,
+                status=EventStatus.PUBLISHED
             ),
             Event(
                 id="e2",
@@ -77,7 +78,8 @@ def seed_database():
                 end_at=now + timedelta(days=10, hours=15, minutes=30),
                 location="Meeting Room 301",
                 capacity=50,
-                registered_count=1
+                registered_count=1,
+                status=EventStatus.PUBLISHED
             ),
             Event(
                 id="e3",
@@ -88,7 +90,20 @@ def seed_database():
                 end_at=now + timedelta(days=15, hours=17),
                 location="Outdoor Venue",
                 capacity=30,
-                registered_count=0
+                registered_count=0,
+                status=EventStatus.REJECTED
+            ),
+            Event(
+                id="e4",
+                organizer_id="u2",
+                title="Pending Workshop",
+                description="Awaiting approval from admin.",
+                start_at=now + timedelta(days=20, hours=10),
+                end_at=now + timedelta(days=20, hours=12),
+                location="Room B",
+                capacity=25,
+                registered_count=0,
+                status=EventStatus.PENDING
             ),
         ]
 

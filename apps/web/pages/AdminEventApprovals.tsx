@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Event, EventStatus } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 export const AdminEventApprovals: React.FC = () => {
   const [pendingEvents, setPendingEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const loadEvents = () => {
-    mockApi.getAllEventsForAdmin().then(data => {
-      // Filter for pending events
-      setPendingEvents(data.filter(e => e.status === EventStatus.PENDING));
-      setLoading(false);
-    });
+    api.getPendingEvents()
+      .then(data => {
+        setPendingEvents(data.items);
+        setError(null);
+      })
+      .catch(() => setError('載入待審核活動時發生錯誤'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -24,14 +29,20 @@ export const AdminEventApprovals: React.FC = () => {
     
     setProcessingId(eventId);
     try {
-      await mockApi.updateEvent(eventId, { status: newStatus });
+      if (newStatus === EventStatus.PUBLISHED) {
+        await api.approveEvent(eventId);
+        addToast('活動已核准', 'success');
+      } else {
+        await api.rejectEvent(eventId);
+        addToast('活動已駁回', 'info');
+      }
       // Optimistically remove from UI for better responsiveness
       setPendingEvents(prev => prev.filter(e => e.id !== eventId));
       
       // Background reload to ensure consistency
       loadEvents();
     } catch (error) {
-      alert('更新狀態失敗');
+      addToast('更新狀態失敗', 'error');
     } finally {
       setProcessingId(null);
     }
@@ -45,6 +56,10 @@ export const AdminEventApprovals: React.FC = () => {
         <div className="p-8 text-center">
              <i className="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-2"></i>
              <p>載入中...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
+            {error}
         </div>
       ) : pendingEvents.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">

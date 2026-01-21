@@ -12,9 +12,9 @@ export interface User {
 }
 
 export enum EventStatus {
-  PENDING = 'pending',
-  PUBLISHED = 'published',
-  REJECTED = 'rejected'
+  PENDING = 'PENDING',
+  PUBLISHED = 'PUBLISHED',
+  REJECTED = 'REJECTED'
 }
 
 export interface Event {

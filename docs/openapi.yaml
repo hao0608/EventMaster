@@ -178,7 +178,11 @@ paths:
       tags:
         - Events
       summary: 取得活動列表
-      description: 取得所有可報名的活動列表
+      description: |
+        取得活動列表 (依角色顯示)
+        - 未登入/Member: 只顯示 PUBLISHED
+        - Organizer: PUBLISHED + 自己建立的活動 (所有狀態)
+        - Admin: 所有活動 (所有狀態)
       security:
         - BearerAuth: []
         - {}
@@ -220,7 +224,10 @@ paths:
       tags:
         - Events
       summary: 建立新活動
-      description: 建立新活動 (需要 Admin 或 Organizer 權限)
+      description: |
+        建立新活動 (需要 Admin 或 Organizer 權限)
+        - Organizer 建立 → status = PENDING
+        - Admin 建立 → status = PUBLISHED
       security:
         - BearerAuth: []
       requestBody:
@@ -268,12 +275,57 @@ paths:
                     location: "Main Auditorium"
                     capacity: 200
                     registeredCount: 0
+                    status: "PENDING"
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
           $ref: '#/components/responses/ForbiddenError'
         '422':
           $ref: '#/components/responses/ValidationError'
+
+  /events/pending:
+    get:
+      operationId: getPendingEvents
+      tags:
+        - Events
+      summary: 取得待審核活動
+      description: 取得所有 PENDING 狀態的活動 (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+      responses:
+        '200':
+          description: 成功取得待審核活動列表
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  total:
+                    type: integer
+                    description: 待審核活動總數
+                    example: 3
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
 
   /events/managed:
     get:
@@ -388,6 +440,68 @@ paths:
       responses:
         '204':
           description: 活動刪除成功
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /events/{eventId}/approve:
+    patch:
+      operationId: approveEvent
+      tags:
+        - Events
+      summary: 核准活動
+      description: 將活動狀態從 PENDING 變更為 PUBLISHED (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventIdParam'
+      responses:
+        '200':
+          description: 活動核准成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: 活動不是 PENDING 狀態
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /events/{eventId}/reject:
+    patch:
+      operationId: rejectEvent
+      tags:
+        - Events
+      summary: 駁回活動
+      description: 將活動狀態從 PENDING 變更為 REJECTED (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/EventIdParam'
+      responses:
+        '200':
+          description: 活動駁回成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+        '400':
+          description: 活動不是 PENDING 狀態
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           $ref: '#/components/responses/UnauthorizedError'
         '403':
@@ -604,16 +718,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - registration
-                  - message
-                properties:
-                  registration:
-                    $ref: '#/components/schemas/Registration'
-                  message:
-                    type: string
-                    example: "Check-in successful!"
+                $ref: '#/components/schemas/CheckInResult'
         '400':
           description: 驗票失敗 (QR code invalid, already checked in, etc.)
           content:
@@ -704,16 +809,7 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - registration
-                  - message
-                properties:
-                  registration:
-                    $ref: '#/components/schemas/Registration'
-                  message:
-                    type: string
-                    example: "Walk-in registration and check-in successful!"
+                $ref: '#/components/schemas/CheckInResult'
         '400':
           description: 現場報名失敗 (活動已額滿等)
           content:
@@ -917,6 +1013,18 @@ components:
           $ref: '#/components/schemas/UserRole'
 
     # ========== Event Related ==========
+    EventStatus:
+      type: string
+      enum:
+        - PENDING
+        - PUBLISHED
+        - REJECTED
+      description: |
+        活動審核狀態:
+        - `PENDING`: 待審核
+        - `PUBLISHED`: 已發布
+        - `REJECTED`: 已駁回
+
     Event:
       type: object
       required:
@@ -929,6 +1037,7 @@ components:
         - location
         - capacity
         - registeredCount
+        - status
       properties:
         id:
           type: string
@@ -972,6 +1081,8 @@ components:
           description: 已報名人數
           minimum: 0
           example: 45
+        status:
+          $ref: '#/components/schemas/EventStatus'
 
     EventCreateRequest:
       type: object
@@ -1133,8 +1244,9 @@ components:
           description: 驗票結果訊息
           example: Check-in Successful!
         registration:
-          $ref: '#/components/schemas/Registration'
           description: 報名紀錄 (驗票成功時回傳)
+          allOf:
+            - $ref: '#/components/schemas/Registration'
 
     # ========== Error Responses ==========
     ErrorResponse:

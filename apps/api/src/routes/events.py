@@ -1,15 +1,17 @@
 """Event management routes"""
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from typing import Optional, List
-from datetime import datetime
+from typing import Optional
 import uuid
 import logging
 from ..database import get_db
 from ..models.user import User, UserRole
-from ..models.event import Event
+from ..models.event import Event, EventStatus
+from ..domain.event_approval import EventApprovalService
 from ..schemas.event import EventCreate, EventUpdate, EventResponse, EventListResponse
+from ..core.rate_limit import RateLimiter
 from ..core.deps import (
     get_current_user,
     get_current_user_optional,
@@ -18,6 +20,12 @@ from ..core.deps import (
 
 router = APIRouter(prefix="/events", tags=["Events"])
 logger = logging.getLogger(__name__)
+approval_rate_limiter = RateLimiter(max_calls=10, period_seconds=60)
+
+
+def ensure_admin(current_user: User) -> None:
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
 
 @router.get("", response_model=EventListResponse)
@@ -25,6 +33,7 @@ def get_events(
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: Optional[User] = Depends(get_current_user_optional),
+    response: Response,
     db: Session = Depends(get_db)
 ):
     """
@@ -32,9 +41,19 @@ def get_events(
 
     Public endpoint - authentication optional
     """
-    query = db.query(Event).order_by(Event.start_at.desc())
+    query = db.query(Event)
+
+    if not current_user or current_user.role == UserRole.MEMBER:
+        query = query.filter(Event.status == EventStatus.PUBLISHED)
+    elif current_user.role == UserRole.ORGANIZER:
+        query = query.filter(
+            or_(Event.status == EventStatus.PUBLISHED, Event.organizer_id == current_user.id)
+        )
+
+    query = query.order_by(Event.start_at.desc())
     total = query.count()
     events = query.offset(offset).limit(limit).all()
+    response.headers["Cache-Control"] = "private, max-age=60"
 
     return EventListResponse(
         items=[EventResponse.model_validate(e) for e in events],
@@ -116,6 +135,12 @@ def create_event(
         )
 
     # Create event
+    event_status = (
+        EventStatus.PUBLISHED
+        if current_user.role == UserRole.ADMIN
+        else EventStatus.PENDING
+    )
+
     event = Event(
         id=str(uuid.uuid4()),
         organizer_id=current_user.id,
@@ -125,7 +150,8 @@ def create_event(
         end_at=event_data.end_at,
         location=event_data.location,
         capacity=event_data.capacity,
-        registered_count=0
+        registered_count=0,
+        status=event_status
     )
 
     try:
@@ -133,6 +159,7 @@ def create_event(
         db.commit()
         db.refresh(event)
         logger.info(f"Event created: {event.id} by user {current_user.id}")
+        EventApprovalService.log_event_creation(event, current_user.id)
     except IntegrityError as e:
         db.rollback()
         logger.error(f"IntegrityError creating event: {str(e)}")
@@ -148,6 +175,58 @@ def create_event(
             detail="Database error occurred while creating event"
         )
 
+    return EventResponse.model_validate(event)
+
+
+@router.get("/pending", response_model=EventListResponse)
+def get_pending_events(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get pending events for admin approval
+    """
+    ensure_admin(current_user)
+    events = EventApprovalService.get_pending_events(db, limit, offset)
+    total = db.query(Event).filter(Event.status == EventStatus.PENDING).count()
+
+    return EventListResponse(
+        items=[EventResponse.model_validate(e) for e in events],
+        total=total,
+        limit=limit,
+        offset=offset
+    )
+
+
+@router.patch("/{event_id}/approve", response_model=EventResponse)
+def approve_event(
+    event_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Approve a pending event
+    """
+    ensure_admin(current_user)
+    approval_rate_limiter.enforce(current_user.id)
+    event = EventApprovalService.approve_event(event_id, current_user.id, db)
+    return EventResponse.model_validate(event)
+
+
+@router.patch("/{event_id}/reject", response_model=EventResponse)
+def reject_event(
+    event_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Reject a pending event
+    """
+    ensure_admin(current_user)
+    approval_rate_limiter.enforce(current_user.id)
+    event = EventApprovalService.reject_event(event_id, current_user.id, db)
     return EventResponse.model_validate(event)
 
 

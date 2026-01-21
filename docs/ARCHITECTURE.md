@@ -32,6 +32,7 @@ EventMaster is a monorepo-based event registration and check-in system that prov
 - **Registration System**: User registration with QR code ticket generation
 - **Check-in Verification**: QR code scanning and walk-in registration
 - **Role-Based Access Control**: Three-tier permission system (member/organizer/admin)
+- **Domain Services**: Approval workflow and walk-in registration logic in `src/domain/`
 
 ### Technology Stack
 
@@ -73,10 +74,10 @@ EventMaster is a monorepo-based event registration and check-in system that prov
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           BACKEND (API)                                  │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
-│  │   Routes    │  │   Schemas   │  │   Models    │  │    Core     │    │
-│  │ (Endpoints) │  │(Validation) │  │   (ORM)     │  │  (Auth/DI)  │    │
+│  │   Routes    │  │   Schemas   │  │   Domain    │  │   Models    │    │
+│  │ (Endpoints) │  │(Validation) │  │ (Services)  │  │   (ORM)     │    │
 │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘    │
-│                         FastAPI + SQLAlchemy                             │
+│                       FastAPI + SQLAlchemy                               │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     │ SQL
@@ -99,7 +100,8 @@ apps/web/
 │   ├── Navbar.tsx          # Navigation with role-based rendering
 │   └── ProtectedRoute.tsx  # Route guard for auth & RBAC
 ├── contexts/               # Global state management
-│   └── AuthContext.tsx     # User auth state & persistence
+│   ├── AuthContext.tsx     # User auth state & persistence
+│   └── ToastContext.tsx    # Global toast notifications
 ├── pages/                  # Route components (views)
 │   ├── Login.tsx           # Authentication page
 │   ├── Events.tsx          # Event listing
@@ -108,7 +110,7 @@ apps/web/
 │   ├── OrganizerVerify.tsx # Ticket verification
 │   └── Admin*.tsx          # Admin management pages
 ├── services/               # API integration layer
-│   └── mockApi.ts          # API service (mock → real)
+│   └── api.ts              # Axios-based API service
 ├── types.ts                # TypeScript type definitions
 ├── App.tsx                 # Root component & routing
 └── index.tsx               # Entry point
@@ -168,12 +170,13 @@ interface AuthContextValue extends AuthState {
 
 | Path | Component | Access | Description |
 |------|-----------|--------|-------------|
-| `/` | Events | Public | Event listing |
-| `/login` | Login | Guest only | Authentication |
-| `/events/:id` | EventDetail | Public | Event details |
+| `/` | Login | Public | Authentication |
+| `/events` | Events | Auth | Event listing |
+| `/events/:id` | EventDetail | Auth | Event details |
 | `/my-tickets` | MyTickets | Member+ | User's registrations |
 | `/organizer/verify` | OrganizerVerify | Organizer+ | Ticket verification |
-| `/admin/events/new` | AdminCreateEvent | Organizer+ | Create event |
+| `/admin/create-event` | AdminCreateEvent | Organizer+ | Create event |
+| `/admin/approvals` | AdminEventApprovals | Admin | Event approvals |
 | `/admin/users` | AdminUsers | Admin | User management |
 
 ### API Service Layer
@@ -181,24 +184,19 @@ interface AuthContextValue extends AuthState {
 ```typescript
 // services/api.ts (pattern)
 class ApiService {
-  private baseUrl: string;
-  private token: string | null;
+  private client = axios.create({ baseURL: API_BASE_URL });
 
-  async request<T>(endpoint: string, options?: RequestInit): Promise<T> {
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.token && { Authorization: `Bearer ${this.token}` }),
-        ...options?.headers,
-      },
+  constructor() {
+    this.client.interceptors.request.use((config) => {
+      const token = localStorage.getItem('accessToken');
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+      return config;
     });
+  }
 
-    if (!response.ok) {
-      throw new ApiError(response.status, await response.json());
-    }
-
-    return response.json();
+  async getEvents() {
+    const response = await this.client.get('/events');
+    return response.data;
   }
 }
 ```

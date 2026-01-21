@@ -1,0 +1,42 @@
+# VCS
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Node
+node_modules/
+**/node_modules/
+dist/
+build/
+apps/web/dist/
+apps/web/.vite/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+apps/api/venv/
+apps/api/.venv/
+
+# Env and logs
+.env*
+*.log*
+
+# Tests/coverage
+.pytest_cache/
+coverage/
+htmlcov/
+
+# Local data
+*.db
+*.sqlite
+*.sqlite3
+
+# IDE
+.vscode/
+.idea/

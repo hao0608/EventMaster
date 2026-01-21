@@ -1,29 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import { User, UserRole } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 export const AdminUsers: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   useEffect(() => {
     loadUsers();
   }, []);
 
   const loadUsers = () => {
-    mockApi.getAllUsers().then(data => {
-      setUsers(data);
-      setLoading(false);
-    });
+    api.getUsers()
+      .then(data => {
+        setUsers(data.items);
+        setError(null);
+      })
+      .catch(() => setError('載入用戶時發生錯誤'))
+      .finally(() => setLoading(false));
   };
 
   const handleRoleChange = async (userId: string, newRole: UserRole) => {
     try {
-      await mockApi.updateUserRole(userId, newRole);
+      await api.updateUserRole(userId, newRole);
       // Optimistic update or reload
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: newRole } : u));
+      addToast('角色已更新', 'success');
     } catch (e) {
-      alert('更新角色失敗');
+      addToast('更新角色失敗', 'error');
     }
   };
 
@@ -33,7 +40,12 @@ export const AdminUsers: React.FC = () => {
       
       <div className="bg-white shadow overflow-hidden rounded-lg">
         {loading ? (
-          <div className="p-6 text-center">載入用戶中...</div>
+          <div className="p-6 text-center">
+            <i className="fa-solid fa-circle-notch fa-spin text-blue-500 text-xl"></i>
+            <p className="mt-2 text-sm text-gray-500">載入用戶中...</p>
+          </div>
+        ) : error ? (
+          <div className="p-6 text-center text-gray-500">{error}</div>
         ) : (
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Event, UserRole } from '../types';
+import { useToast } from '../contexts/ToastContext';
 
 export const EditEvent: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [loading, setLoading] = useState(true);
   
   const [formData, setFormData] = useState({
@@ -21,15 +23,10 @@ export const EditEvent: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-        mockApi.getEventById(id).then(event => {
-            if (!event) {
-                alert('Event not found');
-                navigate('/events');
-                return;
-            }
+        api.getEvent(id).then(event => {
             // Check ownership
             if (user && user.role !== UserRole.ADMIN && event.organizerId !== user.id) {
-                alert('Permission denied');
+                addToast('權限不足，無法編輯此活動。', 'error');
                 navigate('/events');
                 return;
             }
@@ -43,6 +40,9 @@ export const EditEvent: React.FC = () => {
                 capacity: event.capacity
             });
             setLoading(false);
+        }).catch(() => {
+            addToast('找不到此活動', 'error');
+            navigate('/events');
         });
     }
   }, [id, user, navigate]);
@@ -56,18 +56,25 @@ export const EditEvent: React.FC = () => {
     if (!id) return;
 
     try {
-      await mockApi.updateEvent(id, {
+      await api.updateEvent(id, {
         ...formData,
         capacity: Number(formData.capacity)
       });
-      alert('活動更新成功！');
+      addToast('活動更新成功！', 'success');
       navigate(`/events/${id}`);
     } catch (error) {
-      alert('更新失敗');
+      addToast('更新失敗', 'error');
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="p-8 text-center">
+        <i className="fa-solid fa-circle-notch fa-spin text-blue-500 text-xl"></i>
+        <p className="mt-2 text-sm text-gray-500">載入中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
