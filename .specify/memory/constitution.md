@@ -1,17 +1,22 @@
 <!--
 Sync Impact Report:
-- Version: 0.0.0 → 1.0.0 (Initial constitution creation)
-- Modified principles: N/A (new constitution)
-- Added sections: Core Principles (5 principles), Development Standards, Quality Gates, Governance
-- Removed sections: N/A
+- Version: 1.0.0 → 1.1.0 (Minor version bump - new principles added)
+- Modified principles:
+  - None renamed
+- Added sections:
+  - OpenAPI-First Development (Principle VI)
+  - Domain-Driven Business Logic (Principle VII)
+  - Architectural Compliance (Principle VIII)
+  - Minimal Code Changes (Principle IX)
+- Removed sections: None
 - Templates requiring updates:
-  ✅ spec-template.md - aligned with testing requirements
-  ✅ plan-template.md - aligned with architecture principles
-  ✅ tasks-template.md - aligned with testing and branch workflow
+  ✅ spec-template.md - aligned with OpenAPI-first and domain-driven principles
+  ✅ plan-template.md - aligned with architecture compliance requirements
+  ✅ tasks-template.md - aligned with minimal code change principle
 - Follow-up TODOs: None
 -->
 
-# Event Master Constitution
+# EventMaster Constitution
 
 ## Core Principles
 
@@ -83,6 +88,60 @@ Code MUST maintain low coupling between modules, high cohesion within modules, a
 
 **Rationale**: Low coupling enables independent testing and modification, reduces cognitive load, facilitates team collaboration, and improves maintainability.
 
+### VI. OpenAPI-First Development
+
+API development MUST follow the OpenAPI specification (docs/openapi.yaml); any API changes require OpenAPI documentation updates first.
+
+**Rules**:
+- All API endpoints MUST be documented in docs/openapi.yaml before implementation
+- Backend implementation MUST conform to OpenAPI schemas
+- Frontend implementation MUST consume APIs according to OpenAPI contracts
+- If OpenAPI documentation is missing or outdated, update documentation BEFORE modifying code
+- API contract tests MUST validate implementation against OpenAPI spec
+
+**Rationale**: OpenAPI-first development ensures API consistency across frontend and backend, enables contract testing, facilitates code generation, and serves as authoritative API documentation.
+
+### VII. Domain-Driven Business Logic
+
+All business logic MUST be organized in domain layer; business rules MUST NOT be scattered across routes, controllers, or UI components.
+
+**Rules**:
+- Backend: Place all business logic in `src/domain/` directory
+- Business logic MUST be independent of delivery mechanism (HTTP, CLI, etc.)
+- Routes/controllers MUST only handle HTTP concerns (request/response transformation)
+- Domain services MUST be framework-agnostic and testable without HTTP context
+- Business rules MUST be encapsulated in domain entities or services
+
+**Rationale**: Domain-driven organization centralizes business rules, enables reuse across different delivery mechanisms, improves testability, and makes business logic explicit and maintainable.
+
+### VIII. Architectural Compliance
+
+All development MUST follow the architecture defined in docs/ARCHITECTURE.md; architectural decisions MUST be documented.
+
+**Rules**:
+- Consult ARCHITECTURE.md before implementing features
+- Follow defined layering patterns (Routes → Domain → Data Access)
+- Follow defined directory structure and file organization
+- Respect component boundaries and dependencies
+- Document any architectural deviations with rationale
+- Update ARCHITECTURE.md when introducing new architectural patterns
+
+**Rationale**: Architectural consistency ensures predictable code organization, reduces cognitive overhead, facilitates onboarding, and prevents architectural erosion.
+
+### IX. Minimal Code Changes
+
+Feature implementation and bug fixes MUST modify only necessary code; unrelated code MUST NOT be changed.
+
+**Rules**:
+- Change only files directly required for the feature or fix
+- Do NOT refactor unrelated code during feature implementation
+- Do NOT add features beyond what was requested
+- Do NOT modify code formatting, comments, or structure of unchanged logic
+- Separate refactoring into dedicated PRs if needed
+- Follow the principle: "If it's not broken and not blocking, don't touch it"
+
+**Rationale**: Minimal changes reduce risk of introducing bugs, simplify code review, make git history clearer, and respect the stability of working code.
+
 ## Development Standards
 
 ### Technology Stack
@@ -118,11 +177,11 @@ tests/            # Shared test utilities
 ### Code Organization
 
 **Backend Services**:
+- `domain/`: Business logic and domain services (NEW - per Principle VII)
 - `models/`: Database models (SQLAlchemy/Pydantic)
-- `services/`: Business logic with interface definitions
-- `api/`: FastAPI routers and endpoints
+- `routes/`: FastAPI routers and endpoints (HTTP concerns only)
 - `schemas/`: Request/response schemas
-- `utils/`: Shared utilities
+- `core/`: Core utilities and configuration
 - `tests/`: Test files mirroring source structure
 
 **Frontend Structure**:
@@ -154,7 +213,7 @@ tests/            # Shared test utilities
 - Versioned endpoints (`/api/v1/...`)
 - Pagination for list endpoints
 - Consistent error response format
-- OpenAPI/Swagger documentation
+- OpenAPI/Swagger documentation (MUST be updated first per Principle VI)
 
 ## Quality Gates
 
@@ -173,6 +232,7 @@ tests/            # Shared test utilities
 - Branch up-to-date with main
 - Documentation updated if API/interface changed
 - No decrease in test coverage
+- OpenAPI documentation updated if API changed (per Principle VI)
 
 ### Pre-Deployment
 
@@ -219,4 +279,4 @@ When constitution changes, these templates MUST be updated:
 - `.specify/templates/tasks-template.md`: Reflect testing and workflow requirements
 - `.specify/templates/commands/*.md`: Update command execution workflows
 
-**Version**: 1.0.0 | **Ratified**: 2026-01-09 | **Last Amended**: 2026-01-09
+**Version**: 1.1.0 | **Ratified**: 2026-01-09 | **Last Amended**: 2026-01-21
