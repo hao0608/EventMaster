@@ -30,10 +30,10 @@ def ensure_admin(current_user: User) -> None:
 
 @router.get("", response_model=EventListResponse)
 def get_events(
+    response: Response,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: Optional[User] = Depends(get_current_user_optional),
-    response: Response,
     db: Session = Depends(get_db)
 ):
     """
