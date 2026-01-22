@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import uuid
 from ..database import get_db
 from ..models.user import User, UserRole
-from ..models.event import Event
+from ..models.event import Event, EventStatus
 from ..models.registration import Registration, RegistrationStatus
 from ..schemas.registration import (
     RegistrationResponse,
@@ -35,6 +35,12 @@ def register_for_event(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Event not found"
+        )
+
+    if event.status != EventStatus.PUBLISHED:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Event is not published"
         )
 
     # Check if user already has an active registration

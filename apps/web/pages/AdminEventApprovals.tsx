@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Event, EventStatus } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
+import { useToast } from '../contexts/ToastContext';
 
 export const AdminEventApprovals: React.FC = () => {
   const [pendingEvents, setPendingEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const loadEvents = () => {
-    mockApi.getAllEventsForAdmin().then(data => {
-      // Filter for pending events
-      setPendingEvents(data.filter(e => e.status === EventStatus.PENDING));
-      setLoading(false);
-    });
+    api.getPendingEvents()
+      .then(data => {
+        setPendingEvents(data.items);
+        setError(null);
+      })
+      .catch(() => setError('載入待審核活動時發生錯誤'))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -24,14 +29,20 @@ export const AdminEventApprovals: React.FC = () => {
     
     setProcessingId(eventId);
     try {
-      await mockApi.updateEvent(eventId, { status: newStatus });
+      if (newStatus === EventStatus.PUBLISHED) {
+        await api.approveEvent(eventId);
+        addToast('活動已核准', 'success');
+      } else {
+        await api.rejectEvent(eventId);
+        addToast('活動已駁回', 'info');
+      }
       // Optimistically remove from UI for better responsiveness
       setPendingEvents(prev => prev.filter(e => e.id !== eventId));
       
       // Background reload to ensure consistency
       loadEvents();
     } catch (error) {
-      alert('更新狀態失敗');
+      addToast('更新狀態失敗', 'error');
     } finally {
       setProcessingId(null);
     }
@@ -39,12 +50,16 @@ export const AdminEventApprovals: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">活動審核 (Pending Approvals)</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">活動審核</h1>
       
       {loading ? (
         <div className="p-8 text-center">
              <i className="fa-solid fa-circle-notch fa-spin text-3xl text-blue-500 mb-2"></i>
              <p>載入中...</p>
+        </div>
+      ) : error ? (
+        <div className="bg-white rounded-lg shadow p-12 text-center text-gray-500">
+            {error}
         </div>
       ) : pendingEvents.length === 0 ? (
         <div className="bg-white rounded-lg shadow p-12 text-center">
@@ -60,7 +75,7 @@ export const AdminEventApprovals: React.FC = () => {
             <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row border-l-4 border-yellow-400">
                <div className="p-6 flex-1">
                    <div className="flex items-center gap-2 mb-2">
-                       <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold uppercase">Pending</span>
+                       <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">待審核</span>
                        <span className="text-gray-400 text-xs">ID: {event.id}</span>
                    </div>
                    <h2 className="text-xl font-bold text-gray-900 mb-2">{event.title}</h2>

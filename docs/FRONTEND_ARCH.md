@@ -1,6 +1,6 @@
 # 前端架構說明
 
-本文件說明 EventMaster 前端專案的技術架構、目錄結構與 Mock 服務邏輯。
+本文件說明 EventMaster 前端專案的技術架構、目錄結構與 API 服務邏輯。
 
 ## 1. 專案概覽
 
@@ -17,8 +17,10 @@ apps/web/
 ├── components/      # 共用 UI 元件
 │   ├── Navbar.tsx           # 導覽列 (含 RWD 與角色權限判斷)
 │   └── ProtectedRoute.tsx   # 路由守衛 (處理登入檢核與角色導流)
+│   └── ErrorBoundary.tsx    # 全域錯誤邊界
 ├── contexts/        # 全域狀態管理
-│   └── AuthContext.tsx      # 管理 User 登入狀態與 localStorage 持久化
+│   ├── AuthContext.tsx      # 管理 User 登入狀態與 localStorage 持久化
+│   └── ToastContext.tsx     # 通知訊息 (Toast)
 ├── pages/           # 頁面視圖 (Views)
 │   ├── Login.tsx            # 登入頁 (Email/Password)
 │   ├── Events.tsx           # 活動列表
@@ -30,7 +32,7 @@ apps/web/
 │   ├── AdminCreateEvent.tsx # 管理員：建立活動
 │   └── AdminUsers.tsx       # 管理員：用戶權限管理
 ├── services/        # 服務層
-│   └── mockApi.ts           # 模擬後端 CRUD 與延遲 (Production 時需替換)
+│   └── api.ts               # Axios API Client + JWT Interceptor
 ├── public/          # 靜態資源
 ├── types.ts         # TypeScript 型別定義 (User, Event, Registration)
 ├── App.tsx          # 主應用程式元件與路由配置
@@ -44,11 +46,11 @@ apps/web/
 
 ## 2. 核心邏輯說明
 
-### 模擬 API (Mock Service)
-為了在沒有後端的情況下進行 MVP 驗證，所有資料操作皆透過 `services/mockApi.ts` 進行。
-*   資料儲存於記憶體變數 (`MOCK_USERS`, `MOCK_EVENTS`...)。
-*   使用 `setTimeout` 模擬網路延遲 (`delay` function)。
-*   **注意**：重新整理頁面時，除了登入狀態 (LocalStorage) 外，Mock Data 會重置。
+### API 服務層 (Axios)
+目前已改為使用 `services/api.ts` 串接 FastAPI 後端：
+*   透過 Axios 建立 `ApiService` 並集中管理呼叫。
+*   Request interceptor 自動注入 `Authorization: Bearer <token>`。
+*   Response interceptor 針對 `401` 清除 token 並導回登入頁。
 
 ### 權限控制 (RBAC)
 權限控制主要由 `ProtectedRoute` 元件實作：
@@ -58,8 +60,8 @@ apps/web/
 *   **實作位置**：`App.tsx` 中的路由定義。
 
 ### 票券與 QR Code
-*   目前使用字串組合模擬 Token：`QR-{eventId}-{userId}-{random}`。
-*   QR Code 圖片生成使用第三方 API：`api.qrserver.com`。
+*   後端產生 UUID v4 token，前端直接顯示字串。
+*   QR Code 以 `qrcode.react` 在前端渲染，不依賴外部服務。
 
 ## 3. 開發與部署
 
@@ -87,7 +89,7 @@ npm run dev
 VITE_API_BASE_URL=https://api.example.com
 ```
 
-目前使用 Mock API，此環境變數為未來整合真實後端預留。
+目前使用真實 API，此環境變數用於切換後端環境。
 
 ### 部署到 Cloudflare Pages
 
@@ -108,19 +110,17 @@ VITE_API_BASE_URL=https://api.example.com
 
 詳細部署說明請參考專案根目錄的 `CLOUDFLARE_DEPLOYMENT.md`。
 
-## 4. 未來整合指南 (Backend Integration)
+## 4. 後端整合說明
 
-若要對接真實後端 (FastAPI/Node.js)，請依循以下步驟：
+前端已與 FastAPI 後端整合：
 
-1.  **替換 API Layer**：
-    *   保留 `services/` 資料夾結構。
-    *   將 `mockApi.ts` 內容替換為 `axios` 或 `fetch` 呼叫。
-    *   API Endpoint 需對應 `docs/MVP_SPEC.md` 定義的 REST 介面。
+1. **API Layer**：
+   *   `services/api.ts` 提供統一的 API client 與轉換函式。
+   *   所有頁面呼叫皆透過此服務層進行。
 
-2.  **安全性增強**：
-    *   在 `AuthContext` 中，登入成功後需將後端回傳的 `JWT Token` 存入 Storage。
-    *   設定 Axios Interceptor，在每個 Request Header 加入 `Authorization: Bearer <token>`。
+2. **安全性**：
+   *   登入後儲存 `accessToken` 與使用者資訊於 localStorage。
+   *   Axios interceptor 自動注入 JWT，並在 401 時清除登入狀態。
 
-3.  **環境變數更新**：
-    *   更新 `.env.local` 檔案中的 `VITE_API_BASE_URL` 為真實後端 URL。
-    *   在 Cloudflare Pages 環境變數中同步更新此設定。
+3. **環境變數**：
+   *   `.env.local` 設定 `VITE_API_BASE_URL` 指向後端 API。

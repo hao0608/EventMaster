@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { Registration, RegistrationStatus } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 export const MyTickets: React.FC = () => {
   const { user } = useAuth();
+  const { addToast } = useToast();
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadTickets();
@@ -14,26 +18,29 @@ export const MyTickets: React.FC = () => {
 
   const loadTickets = () => {
     if (user) {
-        mockApi.getMyRegistrations(user.id).then(data => {
-            // Sort: Active first, then cancelled
-            const sorted = data.sort((a, b) => {
-                if (a.status === RegistrationStatus.CANCELLED && b.status !== RegistrationStatus.CANCELLED) return 1;
-                if (a.status !== RegistrationStatus.CANCELLED && b.status === RegistrationStatus.CANCELLED) return -1;
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-            });
-            setRegistrations(sorted);
-            setLoading(false);
-        });
+        api.getMyRegistrations()
+          .then(data => {
+              // Sort: Active first, then cancelled
+              const sorted = data.items.sort((a, b) => {
+                  if (a.status === RegistrationStatus.CANCELLED && b.status !== RegistrationStatus.CANCELLED) return 1;
+                  if (a.status !== RegistrationStatus.CANCELLED && b.status === RegistrationStatus.CANCELLED) return -1;
+                  return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+              });
+              setRegistrations(sorted);
+          })
+          .catch(() => setError('載入票券時發生錯誤'))
+          .finally(() => setLoading(false));
     }
   };
 
   const handleCancel = async (regId: string) => {
       if (!confirm('確定要取消此報名嗎？名額將會釋出。')) return;
       try {
-          await mockApi.cancelRegistration(regId);
+          await api.cancelRegistration(regId);
           loadTickets(); // Reload
+          addToast('已取消報名', 'success');
       } catch (e) {
-          alert('取消失敗');
+          addToast('取消失敗', 'error');
       }
   };
 
@@ -48,6 +55,7 @@ export const MyTickets: React.FC = () => {
   };
 
   if (loading) return <div className="p-8 text-center">載入票券中...</div>;
+  if (error) return <div className="p-8 text-center text-gray-500">{error}</div>;
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
@@ -97,10 +105,11 @@ export const MyTickets: React.FC = () => {
                 {reg.status !== RegistrationStatus.CANCELLED ? (
                     <>
                         <div className="bg-white p-2 rounded shadow-sm border border-gray-200">
-                        <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(reg.qrCode)}`}
-                            alt="Ticket QR Code" 
-                            className={`w-32 h-32 object-contain ${reg.status === RegistrationStatus.CHECKED_IN ? 'opacity-50' : ''}`}
+                        <QRCodeCanvas
+                          value={reg.qrCode}
+                          size={128}
+                          level="H"
+                          className={reg.status === RegistrationStatus.CHECKED_IN ? 'opacity-50' : ''}
                         />
                         </div>
                         <p className="mt-3 text-xs font-mono text-gray-500 text-center break-all">{reg.qrCode}</p>

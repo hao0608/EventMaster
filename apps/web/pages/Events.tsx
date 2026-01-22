@@ -1,18 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Event } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 
 export const Events: React.FC = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    mockApi.getEvents().then(data => {
-      setEvents(data);
-      setLoading(false);
-    });
+    api.getEvents()
+      .then(data => {
+        setEvents(data.items);
+      })
+      .catch(() => {
+        setError('載入活動時發生錯誤');
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const filteredEvents = events.filter(event => 
@@ -44,6 +49,10 @@ export const Events: React.FC = () => {
       {loading ? (
         <div className="flex justify-center py-10">
           <i className="fa-solid fa-circle-notch fa-spin text-4xl text-blue-500"></i>
+        </div>
+      ) : error ? (
+        <div className="text-center py-12 bg-white rounded-lg shadow">
+          <p className="text-gray-500">{error}</p>
         </div>
       ) : (
         <>

@@ -1,17 +1,15 @@
 """Check-in and verification routes"""
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from datetime import datetime, timezone
-import uuid
+from sqlalchemy.exc import SQLAlchemyError
 from ..database import get_db
 from ..models.user import User, UserRole
-from ..models.event import Event
+from ..models.event import Event, EventStatus
 from ..models.registration import Registration, RegistrationStatus
 from ..schemas.checkin import CheckInRequest, CheckInResult, WalkInRequest
 from ..schemas.registration import RegistrationResponse
+from ..domain.registration import WalkInService
 from ..core.deps import require_organizer_or_admin
-from ..core.security import get_password_hash
 
 router = APIRouter(tags=["Check-in"])
 
@@ -51,6 +49,12 @@ def verify_ticket(
         return CheckInResult(
             success=False,
             message="權限不足：這張票券屬於其他主辦方的活動，您無法驗票。"
+        )
+
+    if event.status != EventStatus.PUBLISHED:
+        return CheckInResult(
+            success=False,
+            message="活動尚未發布，無法驗票。"
         )
 
     # Check if already checked in
@@ -100,106 +104,21 @@ def walk_in_register(
 
     Must be organizer or admin
     """
-    # Check if event exists
-    event = db.query(Event).filter(Event.id == request.event_id).first()
-    if not event:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Event not found"
-        )
-
-    # Check permissions
-    if current_user.role != UserRole.ADMIN and event.organizer_id != current_user.id:
-        return CheckInResult(
-            success=False,
-            message="權限不足：您不是此活動的主辦方，無法進行現場報名操作。"
-        )
-
-    # Find or create user
-    user = db.query(User).filter(User.email == request.email).first()
-
-    if not user:
-        # Create new user
-        display_name = request.display_name or request.email.split('@')[0]
-        user = User(
-            id=str(uuid.uuid4()),
-            email=request.email,
-            display_name=display_name,
-            hashed_password=get_password_hash(f"temp{uuid.uuid4().hex[:16]}"),  # Temporary password
-            role=UserRole.MEMBER
-        )
-        db.add(user)
-        db.flush()
-
-    # Check if registration exists
-    registration = db.query(Registration).filter(
-        Registration.event_id == request.event_id,
-        Registration.user_id == user.id
-    ).first()
-
-    if registration:
-        if registration.status == RegistrationStatus.CHECKED_IN:
-            return CheckInResult(
-                success=False,
-                message="User already checked in",
-                registration=RegistrationResponse.model_validate(registration)
-            )
-
-        # Reactivate cancelled registration
-        if registration.status == RegistrationStatus.CANCELLED:
-            event.registered_count += 1
-
-        registration.status = RegistrationStatus.CHECKED_IN
-
-        try:
-            db.commit()
-            db.refresh(registration)
-        except SQLAlchemyError as e:
-            db.rollback()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Database error occurred while checking in existing registration"
-            )
-
-        return CheckInResult(
-            success=True,
-            message="Existing registration checked in!",
-            registration=RegistrationResponse.model_validate(registration)
-        )
-
-    # Create new registration and check in
-    registration = Registration(
-        id=str(uuid.uuid4()),
-        event_id=request.event_id,
-        user_id=user.id,
-        event_title=event.title,
-        event_start_at=event.start_at,
-        status=RegistrationStatus.CHECKED_IN,
-        qr_code=f"QR-{request.event_id}-{user.id}-WALKIN",
-        created_at=datetime.now(timezone.utc)
-    )
-
-    event.registered_count += 1
-
     try:
-        db.add(registration)
-        db.commit()
-        db.refresh(registration)
-    except IntegrityError as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Registration with this ID already exists"
+        result = WalkInService.create_walk_in_registration(
+            db=db,
+            event_id=request.event_id,
+            email=request.email,
+            display_name=request.display_name,
+            current_user=current_user,
         )
-    except SQLAlchemyError as e:
-        db.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database error occurred while creating walk-in registration"
-        )
+    except HTTPException as exc:
+        if exc.status_code in {status.HTTP_400_BAD_REQUEST, status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND}:
+            return CheckInResult(success=False, message=str(exc.detail))
+        raise
 
     return CheckInResult(
-        success=True,
-        message="Walk-in Registered & Checked In!",
-        registration=RegistrationResponse.model_validate(registration)
+        success=result.success,
+        message=result.message,
+        registration=RegistrationResponse.model_validate(result.registration)
     )

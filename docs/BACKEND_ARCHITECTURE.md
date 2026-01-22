@@ -24,6 +24,7 @@ EventMaster backend is a RESTful API built with **FastAPI** and **SQLAlchemy ORM
 - **JWT Authentication** - Stateless token-based authentication
 - **Role-Based Access Control (RBAC)** - Three-tier permission system
 - **Event Management** - Full CRUD operations for events
+- **Event Approval Workflow** - PENDING → PUBLISHED/REJECTED transitions
 - **Registration System** - QR code-based ticket generation
 - **Check-in Verification** - QR scanning and walk-in registration
 - **User Management** - Admin panel for role assignment
@@ -54,9 +55,9 @@ EventMaster backend is a RESTful API built with **FastAPI** and **SQLAlchemy ORM
 └─────────────────────────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────┐
-│              Business Logic Layer (Services)             │
+│               Domain Layer (Services)                   │
 │   ┌──────────────────────────────────────────────────┐  │
-│   │  Authentication  │  Authorization  │  Validation │  │
+│   │ EventApproval │ Walk-in Registration │ Validation │  │
 │   └──────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
                             ▼
@@ -82,19 +83,24 @@ EventMaster backend is a RESTful API built with **FastAPI** and **SQLAlchemy ORM
 - Response serialization
 - Error handling
 
-#### 2. **Business Logic Layer** (`src/core/`)
+#### 2. **Domain Layer** (`src/domain/`)
+- Event approval workflow and status transitions
+- Walk-in registration logic
+- Logging of approval actions
+
+#### 3. **Business Logic Layer** (`src/core/`)
 - Authentication logic (JWT generation/verification)
 - Authorization checks (RBAC)
 - Password hashing
 - Business rules enforcement
 
-#### 3. **Data Access Layer** (`src/models/`)
+#### 4. **Data Access Layer** (`src/models/`)
 - ORM model definitions
 - Database relationships
 - Data constraints
 - Query methods
 
-#### 4. **Validation Layer** (`src/schemas/`)
+#### 5. **Validation Layer** (`src/schemas/`)
 - Request/response schemas
 - Data type validation
 - Field constraints
@@ -207,10 +213,12 @@ CREATE TABLE events (
     location VARCHAR(200) NOT NULL,
     capacity INTEGER NOT NULL,
     registered_count INTEGER DEFAULT 0,
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     FOREIGN KEY (organizer_id) REFERENCES users(id)
 );
 CREATE INDEX idx_events_organizer ON events(organizer_id);
 CREATE INDEX idx_events_start_at ON events(start_at);
+CREATE INDEX idx_events_status ON events(status);
 ```
 
 **Columns:**
@@ -223,6 +231,7 @@ CREATE INDEX idx_events_start_at ON events(start_at);
 - `location` - Event location/venue
 - `capacity` - Maximum attendees
 - `registered_count` - Current registration count
+- `status` - Approval status (`PENDING`, `PUBLISHED`, `REJECTED`)
 
 #### **registrations** Table
 ```sql
@@ -511,7 +520,15 @@ def get_db():
         db.close()
 ```
 
-### 4. Models (`src/models/`)
+### 4. Domain Services (`src/domain/`)
+
+**Purpose:** Centralize approval and walk-in business rules
+
+**Key Services:**
+- `EventApprovalService` - Pending list, approve/reject transitions, audit logs
+- `WalkInService` - Walk-in registration with status + capacity validation
+
+### 5. Models (`src/models/`)
 
 **Purpose:** SQLAlchemy ORM model definitions
 
@@ -539,7 +556,7 @@ class Event(Base):
         return self.registered_count >= self.capacity
 ```
 
-### 5. Schemas (`src/schemas/`)
+### 6. Schemas (`src/schemas/`)
 
 **Purpose:** Pydantic models for validation and serialization
 

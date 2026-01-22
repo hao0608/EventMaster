@@ -1,28 +1,33 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Event, Attendee, RegistrationStatus } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 
 export const EventAttendees: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<Event | null>(null);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (id) {
       Promise.all([
-        mockApi.getEventById(id),
-        mockApi.getEventAttendees(id)
+        api.getEvent(id),
+        api.getEventAttendees(id)
       ]).then(([eventData, attendeeData]) => {
         setEvent(eventData || null);
-        setAttendees(attendeeData);
+        setAttendees(attendeeData.items);
+      }).catch(() => {
+        setError('載入名單時發生錯誤');
+      }).finally(() => {
         setLoading(false);
       });
     }
   }, [id]);
 
   if (loading) return <div className="p-10 text-center">載入名單中...</div>;
+  if (error) return <div className="p-10 text-center text-gray-500">{error}</div>;
   if (!event) return <div className="p-10 text-center">找不到此活動</div>;
 
   const checkedInCount = attendees.filter(a => a.status === RegistrationStatus.CHECKED_IN).length;

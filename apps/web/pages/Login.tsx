@@ -87,19 +87,19 @@ export const Login: React.FC = () => {
 
         {/* Developer Hints for MVP */}
         <div className="mt-6 bg-white shadow rounded-lg p-4 text-xs text-gray-500 border border-gray-200">
-          <p className="font-bold mb-2 uppercase tracking-wide">測試用帳號 (密碼任意)</p>
+          <p className="font-bold mb-2 uppercase tracking-wide">測試用帳號 (密碼: password123)</p>
           <div className="grid gap-2">
-            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('member@company.com'); setPassword('123456'); }}>
+            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('member@company.com'); setPassword('password123'); }}>
               <span className="font-medium text-gray-900">member@company.com</span>
-              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">Member</span>
+              <span className="bg-blue-100 text-blue-800 px-2 py-0.5 rounded">一般會員</span>
             </div>
-            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('org@company.com'); setPassword('123456'); }}>
+            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('org@company.com'); setPassword('password123'); }}>
               <span className="font-medium text-gray-900">org@company.com</span>
-              <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">Organizer</span>
+              <span className="bg-purple-100 text-purple-800 px-2 py-0.5 rounded">主辦方</span>
             </div>
-            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('admin@company.com'); setPassword('123456'); }}>
+            <div className="flex justify-between items-center cursor-pointer hover:bg-gray-50 p-1 rounded" onClick={() => { setEmail('admin@company.com'); setPassword('password123'); }}>
               <span className="font-medium text-gray-900">admin@company.com</span>
-              <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded">Admin</span>
+              <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded">管理員</span>
             </div>
           </div>
           <p className="mt-2 text-center text-gray-400 italic">點擊上述帳號可自動填入</p>

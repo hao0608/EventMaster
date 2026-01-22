@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Event, UserRole } from '../types';
-import { mockApi } from '../services/mockApi';
+import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 
 export const EventDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { addToast } = useToast();
   
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,10 +18,12 @@ export const EventDetail: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      mockApi.getEventById(id).then(data => {
-        setEvent(data || null);
-        setLoading(false);
-      });
+      api.getEvent(id)
+        .then(data => {
+          setEvent(data || null);
+        })
+        .catch(() => setEvent(null))
+        .finally(() => setLoading(false));
     }
   }, [id]);
 
@@ -27,11 +31,17 @@ export const EventDetail: React.FC = () => {
     if (!user || !event) return;
     setRegistering(true);
     try {
-      await mockApi.registerForEvent(user.id, event.id);
-      alert('報名成功！正在跳轉至我的票券...');
+      await api.registerForEvent(event.id);
+      addToast('報名成功！正在跳轉至我的票券...', 'success');
       navigate('/my-tickets');
     } catch (err: any) {
-      alert(err.message || '報名失敗');
+      const message =
+        err?.response?.data?.detail?.message ||
+        err?.response?.data?.detail ||
+        err?.response?.data?.message ||
+        err?.message ||
+        '報名失敗';
+      addToast(message, 'error');
     } finally {
       setRegistering(false);
     }
@@ -41,11 +51,11 @@ export const EventDetail: React.FC = () => {
       if (!event || !confirm('確定要刪除此活動嗎？這將無法復原。')) return;
       setDeleting(true);
       try {
-          await mockApi.deleteEvent(event.id);
-          alert('活動已刪除');
+          await api.deleteEvent(event.id);
+          addToast('活動已刪除', 'success');
           navigate('/events');
       } catch (e) {
-          alert('刪除失敗');
+          addToast('刪除失敗', 'error');
           setDeleting(false);
       }
   };

@@ -1,7 +1,15 @@
 """Event database model"""
-from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text
+import enum
+from sqlalchemy import Column, String, Integer, DateTime, ForeignKey, Text, Index
 from sqlalchemy.orm import relationship
 from ..database import Base
+
+
+class EventStatus(str, enum.Enum):
+    """Event approval status enumeration"""
+    PENDING = "PENDING"
+    PUBLISHED = "PUBLISHED"
+    REJECTED = "REJECTED"
 
 
 class Event(Base):
@@ -18,6 +26,11 @@ class Event(Base):
     location = Column(String(200), nullable=False)
     capacity = Column(Integer, nullable=False)
     registered_count = Column(Integer, default=0, nullable=False)
+    status = Column(String(20), default=EventStatus.PENDING, nullable=False)
+
+    __table_args__ = (
+        Index("idx_events_status", "status"),
+    )
 
     # Relationships
     organizer = relationship("User", back_populates="organized_events", foreign_keys=[organizer_id])

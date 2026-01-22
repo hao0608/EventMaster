@@ -1,0 +1,338 @@
+# OpenAPI Schema Changes for Event Approval System
+# Feature Branch: 001-event-approval-system
+# Date: 2026-01-21
+#
+# IMPORTANT: These changes MUST be merged into docs/openapi.yaml BEFORE implementation
+# Per Constitution Principle VI: OpenAPI-First Development
+
+---
+# New Schema: EventStatus Enum
+components:
+  schemas:
+    EventStatus:
+      type: string
+      enum:
+        - PENDING
+        - PUBLISHED
+        - REJECTED
+      description: |
+        Event approval status:
+        - `PENDING`: Event created, awaiting admin approval
+        - `PUBLISHED`: Event approved and visible to public
+        - `REJECTED`: Event rejected by admin
+      example: "PUBLISHED"
+
+    # Updated Schema: Event (add status field)
+    Event:
+      type: object
+      required:
+        - id
+        - organizerId
+        - title
+        - description
+        - startAt
+        - endAt
+        - location
+        - capacity
+        - registeredCount
+        - status  # NEW FIELD
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+        organizerId:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440002"
+        title:
+          type: string
+          maxLength: 200
+          example: "Q1 All-Hands Meeting"
+        description:
+          type: string
+          maxLength: 2000
+          example: "Company wide updates and quarterly goals review."
+        startAt:
+          type: string
+          format: date-time
+          example: "2024-03-15T10:00:00Z"
+        endAt:
+          type: string
+          format: date-time
+          example: "2024-03-15T12:00:00Z"
+        location:
+          type: string
+          maxLength: 500
+          example: "Main Auditorium"
+        capacity:
+          type: integer
+          minimum: 1
+          example: 200
+        registeredCount:
+          type: integer
+          minimum: 0
+          example: 45
+        status:  # NEW FIELD
+          $ref: '#/components/schemas/EventStatus'
+
+---
+# NEW Endpoint: Get Pending Events (Admin Only)
+paths:
+  /events/pending:
+    get:
+      operationId: getPendingEvents
+      tags:
+        - Events
+      summary: Get all pending events
+      description: Retrieve all events with PENDING status awaiting admin approval (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Successfully retrieved pending events
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Event'
+                  total:
+                    type: integer
+                    description: Total number of pending events
+                    example: 3
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+              examples:
+                pendingEventsResponse:
+                  summary: Pending events list
+                  value:
+                    items:
+                      - id: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+                        organizerId: "550e8400-e29b-41d4-a716-446655440002"
+                        title: "Community Workshop"
+                        description: "Monthly tech workshop"
+                        startAt: "2024-04-20T14:00:00Z"
+                        endAt: "2024-04-20T17:00:00Z"
+                        location: "Training Room B"
+                        capacity: 30
+                        registeredCount: 0
+                        status: "PENDING"
+                    total: 3
+                    limit: 20
+                    offset: 0
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+---
+# NEW Endpoint: Approve Event (Admin Only)
+  /events/{eventId}/approve:
+    patch:
+      operationId: approveEvent
+      tags:
+        - Events
+      summary: Approve a pending event
+      description: Change event status from PENDING to PUBLISHED (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+      responses:
+        '200':
+          description: Event approved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+              examples:
+                approvedEvent:
+                  summary: Approved event
+                  value:
+                    id: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+                    organizerId: "550e8400-e29b-41d4-a716-446655440002"
+                    title: "Community Workshop"
+                    description: "Monthly tech workshop"
+                    startAt: "2024-04-20T14:00:00Z"
+                    endAt: "2024-04-20T17:00:00Z"
+                    location: "Training Room B"
+                    capacity: 30
+                    registeredCount: 0
+                    status: "PUBLISHED"
+        '400':
+          description: Event is not in PENDING status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notPending:
+                  summary: Event not pending
+                  value:
+                    error: "InvalidStatus"
+                    message: "Event is not pending"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+---
+# NEW Endpoint: Reject Event (Admin Only)
+  /events/{eventId}/reject:
+    patch:
+      operationId: rejectEvent
+      tags:
+        - Events
+      summary: Reject a pending event
+      description: Change event status from PENDING to REJECTED (Admin only)
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          example: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+      responses:
+        '200':
+          description: Event rejected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+              examples:
+                rejectedEvent:
+                  summary: Rejected event
+                  value:
+                    id: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+                    organizerId: "550e8400-e29b-41d4-a716-446655440002"
+                    title: "Community Workshop"
+                    description: "Monthly tech workshop"
+                    startAt: "2024-04-20T14:00:00Z"
+                    endAt: "2024-04-20T17:00:00Z"
+                    location: "Training Room B"
+                    capacity: 30
+                    registeredCount: 0
+                    status: "REJECTED"
+        '400':
+          description: Event is not in PENDING status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notPending:
+                  summary: Event not pending
+                  value:
+                    error: "InvalidStatus"
+                    message: "Event is not pending"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+---
+# MODIFIED Endpoint: Create Event (add status logic)
+  /events:
+    post:
+      operationId: createEvent
+      # ... (existing fields)
+      description: |
+        Create a new event. Status assignment logic:
+        - Organizer creates event → status = PENDING
+        - Admin creates event → status = PUBLISHED (bypass approval)
+      # ... (rest of spec remains same)
+      responses:
+        '201':
+          description: Event created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+              examples:
+                organizerCreatedEvent:
+                  summary: Organizer created event (PENDING)
+                  value:
+                    id: "a1b2c3d4-e5f6-4a5b-8c9d-1e2f3a4b5c6d"
+                    organizerId: "550e8400-e29b-41d4-a716-446655440002"
+                    title: "New Workshop"
+                    description: "Awaiting approval"
+                    startAt: "2024-05-01T10:00:00Z"
+                    endAt: "2024-05-01T12:00:00Z"
+                    location: "Room A"
+                    capacity: 50
+                    registeredCount: 0
+                    status: "PENDING"
+                adminCreatedEvent:
+                  summary: Admin created event (PUBLISHED)
+                  value:
+                    id: "b2c3d4e5-f6a7-5b6c-9d0e-2f3a4b5c6d7e"
+                    organizerId: "admin-user-id"
+                    title: "Company Townhall"
+                    description: "Quarterly update"
+                    startAt: "2024-05-01T10:00:00Z"
+                    endAt: "2024-05-01T12:00:00Z"
+                    location: "Main Hall"
+                    capacity: 500
+                    registeredCount: 0
+                    status: "PUBLISHED"
+
+---
+# MODIFIED Endpoint: List Events (add status filtering)
+    get:
+      operationId: listEvents
+      # ... (existing fields)
+      description: |
+        Get paginated list of events. Visibility rules:
+        - Unauthenticated users: Only PUBLISHED events
+        - Members: Only PUBLISHED events
+        - Organizers: All PUBLISHED events + their own events (all statuses)
+        - Admins: All events (all statuses)
+      # ... (rest of spec remains same)
+
+---
+# Implementation Notes:
+# 1. Update docs/openapi.yaml by merging these changes BEFORE writing any code
+# 2. Validate OpenAPI spec using: npx @stoplight/spectral-cli lint docs/openapi.yaml
+# 3. Backend implementation MUST conform to these schemas (Pydantic models)
+# 4. Frontend TypeScript interfaces MUST match these schemas
+# 5. Write contract tests to validate implementation against OpenAPI spec

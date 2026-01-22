@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { User, UserRole } from '../types';
-import { mockApi } from '../services/mockApi';
+import { User } from '../types';
+import { api } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -18,17 +18,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   // Restore session from local storage for convenience
   useEffect(() => {
     const storedUser = localStorage.getItem('eventmaster_user');
-    if (storedUser) {
+    const token = localStorage.getItem('accessToken');
+    if (storedUser && token) {
       setUser(JSON.parse(storedUser));
+      return;
+    }
+
+    if (token) {
+      api.getCurrentUser()
+        .then((currentUser) => setUser(currentUser))
+        .catch(() => {
+          localStorage.removeItem('accessToken');
+        });
+    } else {
+      localStorage.removeItem('eventmaster_user');
     }
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const userData = await mockApi.login(email, password);
-      setUser(userData);
-      localStorage.setItem('eventmaster_user', JSON.stringify(userData));
+      const response = await api.login(email, password);
+      setUser(response.user);
+      localStorage.setItem('eventmaster_user', JSON.stringify(response.user));
+      localStorage.setItem('accessToken', response.accessToken);
     } catch (error) {
       console.error(error);
       throw error; // Re-throw to handle in UI
@@ -40,6 +53,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = () => {
     setUser(null);
     localStorage.removeItem('eventmaster_user');
+    localStorage.removeItem('accessToken');
   };
 
   return (

@@ -1,7 +1,9 @@
 import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ToastProvider } from './contexts/ToastContext';
 import { Navbar } from './components/Navbar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/Login';
 import { Events } from './pages/Events';
 import { EventDetail } from './pages/EventDetail';
@@ -17,74 +19,78 @@ import { UserRole } from './types';
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <div className="min-h-screen bg-gray-50 font-sans">
-          <Navbar />
-          <Routes>
-            {/* Public */}
-            <Route path="/" element={<Login />} />
-            
-            {/* Protected: All Authenticated Users */}
-            <Route path="/events" element={
-              <ProtectedRoute>
-                <Events />
-              </ProtectedRoute>
-            } />
-            <Route path="/events/:id" element={
-              <ProtectedRoute>
-                <EventDetail />
-              </ProtectedRoute>
-            } />
+    <ToastProvider>
+      <AuthProvider>
+        <HashRouter>
+          <div className="min-h-screen bg-gray-50 font-sans">
+            <Navbar />
+            <ErrorBoundary>
+              <Routes>
+                {/* Public */}
+                <Route path="/" element={<Login />} />
+                
+                {/* Protected: All Authenticated Users */}
+                <Route path="/events" element={
+                  <ProtectedRoute>
+                    <Events />
+                  </ProtectedRoute>
+                } />
+                <Route path="/events/:id" element={
+                  <ProtectedRoute>
+                    <EventDetail />
+                  </ProtectedRoute>
+                } />
 
-            {/* Protected: Member */}
-            <Route path="/my-tickets" element={
-              <ProtectedRoute allowedRoles={[UserRole.MEMBER, UserRole.ORGANIZER, UserRole.ADMIN]}>
-                <MyTickets />
-              </ProtectedRoute>
-            } />
+                {/* Protected: Member */}
+                <Route path="/my-tickets" element={
+                  <ProtectedRoute allowedRoles={[UserRole.MEMBER, UserRole.ORGANIZER, UserRole.ADMIN]}>
+                    <MyTickets />
+                  </ProtectedRoute>
+                } />
 
-            {/* Protected: Organizer & Admin */}
-            <Route path="/organizer/verify" element={
-              <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
-                <OrganizerVerify />
-              </ProtectedRoute>
-            } />
-            <Route path="/events/:id/attendees" element={
-              <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
-                <EventAttendees />
-              </ProtectedRoute>
-            } />
-            
-            {/* Protected: Organizer & Admin (Creation/Editing) */}
-            <Route path="/admin/create-event" element={
-              <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
-                <AdminCreateEvent />
-              </ProtectedRoute>
-            } />
-             <Route path="/events/:id/edit" element={
-              <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
-                <EditEvent />
-              </ProtectedRoute>
-            } />
-            
-            {/* Protected: Admin Only */}
-            <Route path="/admin/users" element={
-              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                <AdminUsers />
-              </ProtectedRoute>
-            } />
-             <Route path="/admin/approvals" element={
-              <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                <AdminEventApprovals />
-              </ProtectedRoute>
-            } />
-            
-            <Route path="*" element={<Navigate to="/" />} />
-          </Routes>
-        </div>
-      </HashRouter>
-    </AuthProvider>
+                {/* Protected: Organizer & Admin */}
+                <Route path="/organizer/verify" element={
+                  <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
+                    <OrganizerVerify />
+                  </ProtectedRoute>
+                } />
+                <Route path="/events/:id/attendees" element={
+                  <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
+                    <EventAttendees />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Protected: Organizer & Admin (Creation/Editing) */}
+                <Route path="/admin/create-event" element={
+                  <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
+                    <AdminCreateEvent />
+                  </ProtectedRoute>
+                } />
+                 <Route path="/events/:id/edit" element={
+                  <ProtectedRoute allowedRoles={[UserRole.ORGANIZER, UserRole.ADMIN]}>
+                    <EditEvent />
+                  </ProtectedRoute>
+                } />
+                
+                {/* Protected: Admin Only */}
+                <Route path="/admin/users" element={
+                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                    <AdminUsers />
+                  </ProtectedRoute>
+                } />
+                 <Route path="/admin/approvals" element={
+                  <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                    <AdminEventApprovals />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="*" element={<Navigate to="/" />} />
+              </Routes>
+            </ErrorBoundary>
+          </div>
+        </HashRouter>
+      </AuthProvider>
+    </ToastProvider>
   );
 };
 
