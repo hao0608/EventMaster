@@ -70,9 +70,9 @@ export const AdminUsers: React.FC = () => {
                       onChange={(e) => handleRoleChange(user.id, e.target.value as UserRole)}
                       className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border bg-white text-gray-900"
                     >
-                      <option value={UserRole.MEMBER}>會員 (Member)</option>
-                      <option value={UserRole.ORGANIZER}>主辦方 (Organizer)</option>
-                      <option value={UserRole.ADMIN}>管理員 (Admin)</option>
+                      <option value={UserRole.MEMBER}>會員</option>
+                      <option value={UserRole.ORGANIZER}>主辦方</option>
+                      <option value={UserRole.ADMIN}>管理員</option>
                     </select>
                   </td>
                 </tr>

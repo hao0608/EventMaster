@@ -96,7 +96,7 @@ export const OrganizerVerify: React.FC = () => {
 
   return (
     <div className="max-w-xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">驗票控制台 (Check-in)</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6 text-center">驗票控制台</h1>
       
       {/* Tabs */}
       <div className="flex border-b border-gray-200 mb-6">

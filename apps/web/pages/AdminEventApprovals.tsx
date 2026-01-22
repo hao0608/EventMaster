@@ -50,7 +50,7 @@ export const AdminEventApprovals: React.FC = () => {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">活動審核 (Pending Approvals)</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">活動審核</h1>
       
       {loading ? (
         <div className="p-8 text-center">
@@ -75,7 +75,7 @@ export const AdminEventApprovals: React.FC = () => {
             <div key={event.id} className="bg-white rounded-lg shadow-md overflow-hidden flex flex-col md:flex-row border-l-4 border-yellow-400">
                <div className="p-6 flex-1">
                    <div className="flex items-center gap-2 mb-2">
-                       <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold uppercase">Pending</span>
+                       <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">待審核</span>
                        <span className="text-gray-400 text-xs">ID: {event.id}</span>
                    </div>
                    <h2 className="text-xl font-bold text-gray-900 mb-2">{event.title}</h2>

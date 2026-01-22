@@ -66,7 +66,7 @@ export const AdminCreateEvent: React.FC = () => {
       <form onSubmit={handleSubmit} className="bg-white shadow rounded-lg p-6 space-y-6">
         
         <div>
-          <label className="block text-sm font-medium text-gray-700">活動名稱 (Title)</label>
+          <label className="block text-sm font-medium text-gray-700">活動名稱</label>
           <input 
             type="text" 
             name="title" 
@@ -78,7 +78,7 @@ export const AdminCreateEvent: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">活動描述 (Description)</label>
+          <label className="block text-sm font-medium text-gray-700">活動描述</label>
           <textarea 
             name="description" 
             rows={3} 
@@ -114,7 +114,7 @@ export const AdminCreateEvent: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">地點 (Location)</label>
+          <label className="block text-sm font-medium text-gray-700">地點</label>
           <input 
             type="text" 
             name="location" 
@@ -126,7 +126,7 @@ export const AdminCreateEvent: React.FC = () => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700">人數上限 (Capacity)</label>
+          <label className="block text-sm font-medium text-gray-700">人數上限</label>
           <input 
             type="number" 
             name="capacity" 

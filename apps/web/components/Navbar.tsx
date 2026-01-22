@@ -3,6 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { UserRole } from '../types';
 
+const roleLabels: Record<string, string> = {
+  member: '一般會員',
+  organizer: '主辦方',
+  admin: '管理員',
+};
+
 export const Navbar: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -63,7 +69,7 @@ export const Navbar: React.FC = () => {
           </div>
           <div className="flex items-center space-x-4">
             <div className="text-sm text-blue-200 hidden sm:block">
-              {user.displayName} <span className="text-xs border border-blue-400 rounded px-1 ml-1 uppercase">{user.role}</span>
+              {user.displayName} <span className="text-xs border border-blue-400 rounded px-1 ml-1">{roleLabels[user.role] || user.role}</span>
             </div>
             <button 
               onClick={handleLogout}
