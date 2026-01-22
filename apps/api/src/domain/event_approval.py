@@ -67,7 +67,8 @@ class EventApprovalService:
     @staticmethod
     def log_event_creation(event: Event, creator_id: str) -> None:
         """Log event creation with its initial status."""
-        EventApprovalService._log_action(event.id, creator_id, f"CREATE_{event.status.value}")
+        status_value = event.status.value if hasattr(event.status, 'value') else event.status
+        EventApprovalService._log_action(event.id, creator_id, f"CREATE_{status_value}")
 
     @staticmethod
     def _log_action(event_id: str, admin_id: str, action: str) -> None:

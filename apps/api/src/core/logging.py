@@ -19,18 +19,17 @@ def setup_logging(log_level: Optional[str] = None) -> None:
     log_dir = Path("logs")
     log_dir.mkdir(exist_ok=True)
 
+    # Create handlers
+    console_handler = logging.StreamHandler(sys.stdout)
+    file_handler = logging.FileHandler(log_dir / "app.log")
+    error_handler = logging.FileHandler(log_dir / "error.log")
+    error_handler.setLevel(logging.ERROR)
+
     # Configure root logger
     logging.basicConfig(
         level=getattr(logging, level.upper()),
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-        handlers=[
-            # Console handler
-            logging.StreamHandler(sys.stdout),
-            # File handler for all logs
-            logging.FileHandler(log_dir / "app.log"),
-            # Separate file for errors
-            logging.FileHandler(log_dir / "error.log", level=logging.ERROR)
-        ]
+        handlers=[console_handler, file_handler, error_handler]
     )
 
     # Set third-party loggers to WARNING to reduce noise

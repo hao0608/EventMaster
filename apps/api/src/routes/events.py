@@ -94,6 +94,28 @@ def get_managed_events(
     )
 
 
+@router.get("/pending", response_model=EventListResponse)
+def get_pending_events(
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Get pending events for admin approval
+    """
+    ensure_admin(current_user)
+    events = EventApprovalService.get_pending_events(db, limit, offset)
+    total = db.query(Event).filter(Event.status == EventStatus.PENDING).count()
+
+    return EventListResponse(
+        items=[EventResponse.model_validate(e) for e in events],
+        total=total,
+        limit=limit,
+        offset=offset
+    )
+
+
 @router.get("/{event_id}", response_model=EventResponse)
 def get_event(
     event_id: str,
@@ -176,28 +198,6 @@ def create_event(
         )
 
     return EventResponse.model_validate(event)
-
-
-@router.get("/pending", response_model=EventListResponse)
-def get_pending_events(
-    limit: int = Query(20, ge=1, le=100),
-    offset: int = Query(0, ge=0),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    Get pending events for admin approval
-    """
-    ensure_admin(current_user)
-    events = EventApprovalService.get_pending_events(db, limit, offset)
-    total = db.query(Event).filter(Event.status == EventStatus.PENDING).count()
-
-    return EventListResponse(
-        items=[EventResponse.model_validate(e) for e in events],
-        total=total,
-        limit=limit,
-        offset=offset
-    )
 
 
 @router.patch("/{event_id}/approve", response_model=EventResponse)
