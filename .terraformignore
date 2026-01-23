@@ -1,0 +1,40 @@
+# Terraform ignore file
+# Excludes files from being copied to Terraform modules
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+*.md
+docs/
+specs/
+
+# Code directories
+apps/
+src/
+
+# Node.js
+node_modules/
+package.json
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+requirements.txt
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment files
+.env*

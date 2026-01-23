@@ -1,0 +1,124 @@
+{
+  "_comment": "ECS Task Definition for EventMaster API (Dev Environment)",
+  "_feature": "002-dev-deployment-arch",
+  "_date": "2026-01-23",
+
+  "family": "eventmaster-api-dev",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+
+  "cpu": "256",
+  "memory": "512",
+
+  "executionRoleArn": "${ECS_EXECUTION_ROLE_ARN}",
+  "taskRoleArn": "${ECS_TASK_ROLE_ARN}",
+
+  "containerDefinitions": [
+    {
+      "name": "eventmaster-api",
+      "image": "${ECR_REPOSITORY_URL}:latest",
+      "essential": true,
+
+      "portMappings": [
+        {
+          "containerPort": 8000,
+          "protocol": "tcp"
+        }
+      ],
+
+      "environment": [
+        {
+          "name": "ENVIRONMENT",
+          "value": "dev"
+        },
+        {
+          "name": "DEBUG",
+          "value": "false"
+        },
+        {
+          "name": "HOST",
+          "value": "0.0.0.0"
+        },
+        {
+          "name": "PORT",
+          "value": "8000"
+        },
+        {
+          "name": "LOG_LEVEL",
+          "value": "INFO"
+        },
+        {
+          "name": "ALLOWED_ORIGINS",
+          "value": "https://dev.eventmaster.example.com"
+        }
+      ],
+
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "${SECRETS_ARN_DATABASE}:connection_string::"
+        },
+        {
+          "name": "SECRET_KEY",
+          "valueFrom": "${SECRETS_ARN_APP}:SECRET_KEY::"
+        },
+        {
+          "name": "COGNITO_USER_POOL_ID",
+          "valueFrom": "${SECRETS_ARN_APP}:COGNITO_USER_POOL_ID::"
+        },
+        {
+          "name": "COGNITO_CLIENT_ID",
+          "valueFrom": "${SECRETS_ARN_APP}:COGNITO_CLIENT_ID::"
+        },
+        {
+          "name": "COGNITO_REGION",
+          "valueFrom": "${SECRETS_ARN_APP}:COGNITO_REGION::"
+        }
+      ],
+
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/eventmaster-api-dev",
+          "awslogs-region": "${AWS_REGION}",
+          "awslogs-stream-prefix": "ecs",
+          "awslogs-create-group": "true"
+        }
+      },
+
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "curl -f http://localhost:8000/health || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 60
+      },
+
+      "ulimits": [
+        {
+          "name": "nofile",
+          "softLimit": 65536,
+          "hardLimit": 65536
+        }
+      ]
+    }
+  ],
+
+  "tags": [
+    {
+      "key": "Environment",
+      "value": "dev"
+    },
+    {
+      "key": "Project",
+      "value": "eventmaster"
+    },
+    {
+      "key": "ManagedBy",
+      "value": "terraform"
+    }
+  ]
+}

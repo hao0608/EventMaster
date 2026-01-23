@@ -1,0 +1,126 @@
+# AWS Cognito User Pool Configuration
+# Feature: 002-dev-deployment-arch
+# Date: 2026-01-23
+
+apiVersion: v1
+kind: CognitoUserPoolConfig
+metadata:
+  name: eventmaster-dev
+  environment: dev
+
+spec:
+  userPool:
+    name: eventmaster-dev
+    deletionProtection: false  # dev 環境可刪除
+
+    # 帳號設定
+    usernameAttributes:
+      - email
+    autoVerifiedAttributes:
+      - email
+
+    # 密碼政策
+    passwordPolicy:
+      minimumLength: 8
+      requireLowercase: true
+      requireUppercase: true
+      requireNumbers: true
+      requireSymbols: false
+      temporaryPasswordValidityDays: 7
+
+    # MFA 設定 (dev 環境關閉)
+    mfaConfiguration: "OFF"
+
+    # 帳號復原設定
+    accountRecoverySetting:
+      recoveryMechanisms:
+        - name: verified_email
+          priority: 1
+
+    # Schema (使用者屬性)
+    schema:
+      - name: email
+        attributeDataType: String
+        required: true
+        mutable: true
+      - name: name
+        attributeDataType: String
+        required: false
+        mutable: true
+
+  # App Client 設定
+  appClient:
+    name: eventmaster-web
+    generateSecret: false  # SPA 不使用 client secret
+
+    # 認證流程
+    explicitAuthFlows:
+      - ALLOW_USER_PASSWORD_AUTH
+      - ALLOW_USER_SRP_AUTH
+      - ALLOW_REFRESH_TOKEN_AUTH
+
+    # Token 有效期
+    accessTokenValidity: 1  # 1 hour
+    idTokenValidity: 1      # 1 hour
+    refreshTokenValidity: 30  # 30 days
+    tokenValidityUnits:
+      accessToken: hours
+      idToken: hours
+      refreshToken: days
+
+    # 防止 Token 撤銷
+    enableTokenRevocation: true
+
+    # OAuth 設定 (可選，供未來 SSO 使用)
+    allowedOAuthFlows:
+      - code
+    allowedOAuthScopes:
+      - openid
+      - email
+      - profile
+    callbackUrls:
+      - https://dev.eventmaster.example.com/callback
+    logoutUrls:
+      - https://dev.eventmaster.example.com/logout
+    supportedIdentityProviders:
+      - COGNITO
+
+  # User Groups (RBAC)
+  groups:
+    - name: member
+      description: 一般會員 - 可查看活動、報名、查看自己的票券
+      precedence: 30
+
+    - name: organizer
+      description: 活動主辦者 - 可建立活動、查看報名名單、驗證票券
+      precedence: 20
+
+    - name: admin
+      description: 系統管理員 - 可管理所有活動與使用者
+      precedence: 10
+
+  # Lambda Triggers (可選)
+  lambdaTriggers:
+    # 未來可新增：
+    # preSignUp: arn:aws:lambda:...
+    # postConfirmation: arn:aws:lambda:...
+    # preTokenGeneration: arn:aws:lambda:...
+
+---
+# JWT Claims 說明
+# Cognito JWT 包含以下重要 claims:
+#
+# Access Token:
+#   - sub: 使用者 UUID
+#   - cognito:groups: ["member"] | ["organizer"] | ["admin"]
+#   - token_use: "access"
+#   - exp: 過期時間
+#
+# ID Token:
+#   - sub: 使用者 UUID
+#   - email: 使用者 email
+#   - cognito:groups: ["member"] | ["organizer"] | ["admin"]
+#   - token_use: "id"
+#
+# JWKS URL (驗證用):
+#   https://cognito-idp.{region}.amazonaws.com/{userPoolId}/.well-known/jwks.json

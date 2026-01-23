@@ -1,0 +1,168 @@
+# Terraform Variables Reference
+# Feature: 002-dev-deployment-arch
+# Date: 2026-01-23
+#
+# 此文件定義 Terraform 所需的變數，實際值應設定於 terraform.tfvars 或環境變數
+
+apiVersion: v1
+kind: TerraformVariablesReference
+metadata:
+  environment: dev
+  region: ap-northeast-1
+
+variables:
+  # ===== 必要變數 =====
+
+  aws_region:
+    type: string
+    default: "ap-northeast-1"
+    description: "AWS Region for all resources"
+
+  environment:
+    type: string
+    default: "dev"
+    description: "Environment name (dev/staging/prod)"
+
+  project_name:
+    type: string
+    default: "eventmaster"
+    description: "Project name used for resource naming"
+
+  # ===== VPC 設定 =====
+
+  vpc_cidr:
+    type: string
+    default: "10.0.0.0/16"
+    description: "CIDR block for VPC"
+
+  availability_zones:
+    type: list(string)
+    default:
+      - "ap-northeast-1a"
+      - "ap-northeast-1c"
+    description: "Availability zones for subnets"
+
+  # ===== ECS 設定 =====
+
+  ecs_cpu:
+    type: number
+    default: 256
+    description: "CPU units for ECS task (256 = 0.25 vCPU)"
+
+  ecs_memory:
+    type: number
+    default: 512
+    description: "Memory in MB for ECS task"
+
+  ecs_desired_count:
+    type: number
+    default: 1
+    description: "Number of ECS tasks to run"
+
+  container_port:
+    type: number
+    default: 8000
+    description: "Port exposed by the container"
+
+  # ===== RDS 設定 =====
+
+  rds_instance_class:
+    type: string
+    default: "db.t3.micro"
+    description: "RDS instance class"
+
+  rds_allocated_storage:
+    type: number
+    default: 20
+    description: "Allocated storage in GB"
+
+  rds_engine_version:
+    type: string
+    default: "15"
+    description: "PostgreSQL version"
+
+  rds_database_name:
+    type: string
+    default: "eventmaster_dev"
+    description: "Initial database name"
+
+  # ===== Cognito 設定 =====
+
+  cognito_password_min_length:
+    type: number
+    default: 8
+    description: "Minimum password length"
+
+  cognito_mfa_configuration:
+    type: string
+    default: "OFF"
+    description: "MFA configuration (OFF/OPTIONAL/ON)"
+
+  # ===== ALB 設定 =====
+
+  alb_health_check_path:
+    type: string
+    default: "/health"
+    description: "Health check endpoint path"
+
+  alb_health_check_interval:
+    type: number
+    default: 30
+    description: "Health check interval in seconds"
+
+  # ===== 域名設定 =====
+
+  domain_name:
+    type: string
+    description: "Base domain name (e.g., eventmaster.example.com)"
+    required: true
+
+  api_subdomain:
+    type: string
+    default: "api-dev"
+    description: "API subdomain prefix"
+
+  # ===== 標籤 =====
+
+  tags:
+    type: map(string)
+    default:
+      Environment: "dev"
+      Project: "eventmaster"
+      ManagedBy: "terraform"
+    description: "Common tags for all resources"
+
+---
+# Outputs Reference
+outputs:
+  vpc_id:
+    description: "VPC ID"
+    sensitive: false
+
+  alb_dns_name:
+    description: "ALB DNS name for Cloudflare DNS"
+    sensitive: false
+
+  ecr_repository_url:
+    description: "ECR repository URL for Docker push"
+    sensitive: false
+
+  cognito_user_pool_id:
+    description: "Cognito User Pool ID"
+    sensitive: false
+
+  cognito_client_id:
+    description: "Cognito App Client ID"
+    sensitive: false
+
+  rds_endpoint:
+    description: "RDS endpoint (hostname:port)"
+    sensitive: false
+
+  secrets_arn_database:
+    description: "Secrets Manager ARN for database credentials"
+    sensitive: true
+
+  secrets_arn_app:
+    description: "Secrets Manager ARN for app secrets"
+    sensitive: true
