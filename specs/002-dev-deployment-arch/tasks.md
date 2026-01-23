@@ -80,16 +80,16 @@
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] 建立 Cloudflare Pages 專案（手動 - 見下方指南）
-- [ ] T023 [US1] 設定 Cloudflare Pages 建置命令（手動 - 見下方指南）
-- [ ] T024 [US1] 設定 Cloudflare Pages 環境變數（手動 - 見下方指南）
+- [X] T022 [US1] 建立 Cloudflare Pages 專案（用戶已完成）
+- [X] T023 [US1] 設定 Cloudflare Pages 建置命令（用戶已完成）
+- [X] T024 [US1] 設定 Cloudflare Pages 環境變數（用戶已完成）
 - [X] T025 [US1] 建立前端部署 workflow `.github/workflows/deploy-frontend.yml`
-- [ ] T026 [US1] 設定 GitHub Secrets（手動 - 見下方指南）
-- [ ] T027 [US1] 建立 Cloudflare DNS CNAME 記錄（手動 - 見下方指南）
+- [X] T026 [US1] 設定 GitHub Secrets（Cloudflare 整合已完成）
+- [~] T027 [US1] 建立 Cloudflare DNS CNAME 記錄（跳過 - 無自訂域名模式）
 - [X] T028 [US1] 更新前端環境變數設定 `apps/web/.env.example`
 - [ ] T029 [US1] 驗證：推送程式碼至 main 分支，確認自動部署成功
 
-**Checkpoint**: 前端部署流程完成，可透過 dev 網址存取應用
+**Checkpoint**: ✅ 前端部署流程完成（用戶已有 Cloudflare Pages 自動部署）
 
 ---
 
@@ -111,9 +111,9 @@
 - [ ] T034 [P] [US2] 建立 ALB 模組 `infra/terraform/modules/alb/main.tf`
 - [ ] T035 [P] [US2] 建立 ALB 模組變數與輸出 `infra/terraform/modules/alb/variables.tf`, `outputs.tf`
 - [ ] T036 [US2] 設定 ALB Security Group (alb-sg)
-- [ ] T037 [US2] 設定 ALB HTTPS Listener (443)
+- [ ] T037 [US2] 設定 ALB HTTP Listener (80)（無自訂域名模式，跳過 HTTPS）
 - [ ] T038 [US2] 設定 ALB Target Group 與健康檢查（/health, interval 30s）
-- [ ] T039 [US2] 申請 ACM 憑證或匯入現有憑證
+- [~] T039 [US2] 申請 ACM 憑證（跳過 - 無自訂域名模式）
 - [ ] T040 [US2] 整合 ALB 模組至 dev 環境
 
 ### 4.3 ECS Cluster & Service
@@ -130,12 +130,12 @@
 
 ### 4.4 DNS 與 CI/CD
 
-- [ ] T050 [US2] 建立 Cloudflare DNS CNAME 記錄（api-dev.eventmaster.example.com → ALB）
-- [ ] T051 [US2] 啟用 Cloudflare Proxy（橘雲）
+- [~] T050 [US2] 建立 Cloudflare DNS CNAME 記錄（跳過 - 無自訂域名模式，直接使用 ALB DNS）
+- [~] T051 [US2] 啟用 Cloudflare Proxy（跳過 - 無自訂域名模式）
 - [ ] T052 [US2] 建立後端部署 workflow `.github/workflows/deploy-backend.yml`
 - [ ] T053 [US2] 設定 GitHub Secrets（AWS_ROLE_ARN）
 - [ ] T054 [US2] 更新 Dockerfile（若需要）`apps/api/Dockerfile`
-- [ ] T055 [US2] 新增健康檢查端點 `/health` 在 `apps/api/main.py`
+- [X] T055 [US2] 新增健康檢查端點 `/health` 在 `apps/api/main.py`
 - [ ] T056 [US2] 驗證：推送程式碼至 main 分支，確認自動部署成功
 
 **Checkpoint**: 後端部署流程完成，API 可透過 HTTPS 存取

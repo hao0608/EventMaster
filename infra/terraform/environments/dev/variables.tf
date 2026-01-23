@@ -41,17 +41,24 @@ variable "tags" {
   }
 }
 
-# Domain configuration
+# Domain configuration (Optional - leave empty for no custom domain mode)
 variable "domain_name" {
-  description = "Base domain name (e.g., eventmaster.example.com)"
+  description = "Base domain name (e.g., eventmaster.example.com). Leave empty to use ALB DNS directly."
   type        = string
   default     = ""
 }
 
 variable "api_subdomain" {
-  description = "API subdomain prefix"
+  description = "API subdomain prefix (only used if domain_name is set)"
   type        = string
   default     = "api-dev"
+}
+
+# Cloudflare Pages configuration
+variable "cloudflare_pages_project" {
+  description = "Cloudflare Pages project name (e.g., eventmaster-web). Used for CORS wildcard."
+  type        = string
+  default     = ""
 }
 
 # ECS configuration

@@ -14,9 +14,19 @@ vpc_cidr = "10.0.0.0/16"
 availability_zones = ["ap-northeast-1a", "ap-northeast-1c"]
 
 # Domain Configuration
-# IMPORTANT: Replace with your actual domain
-domain_name = "eventmaster.example.com"
+# Option 1: With custom domain (recommended for production)
+# domain_name = "eventmaster.example.com"
+# api_subdomain = "api-dev"
+
+# Option 2: No custom domain (dev-only mode)
+# Leave domain_name empty to use ALB DNS directly (HTTP only)
+domain_name = ""
 api_subdomain = "api-dev"
+
+# Cloudflare Pages Configuration
+# Set to your Cloudflare Pages project name for CORS wildcard support
+# Example: If your URL is https://eventmaster-web.pages.dev, use "eventmaster-web"
+cloudflare_pages_project = ""
 
 # ECS Configuration
 ecs_cpu = 256
