@@ -80,13 +80,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] 建立 Cloudflare Pages 專案（手動或 Terraform）
-- [ ] T023 [US1] 設定 Cloudflare Pages 建置命令 `cd apps/web && npm ci && npm run build`
-- [ ] T024 [US1] 設定 Cloudflare Pages 環境變數（VITE_API_BASE_URL 等）
-- [ ] T025 [US1] 建立前端部署 workflow `.github/workflows/deploy-frontend.yml`
-- [ ] T026 [US1] 設定 GitHub Secrets（CLOUDFLARE_API_TOKEN, CLOUDFLARE_ACCOUNT_ID）
-- [ ] T027 [US1] 建立 Cloudflare DNS CNAME 記錄（dev.eventmaster.example.com）
-- [ ] T028 [US1] 更新前端環境變數設定 `apps/web/.env.example`
+- [ ] T022 [US1] 建立 Cloudflare Pages 專案（手動 - 見下方指南）
+- [ ] T023 [US1] 設定 Cloudflare Pages 建置命令（手動 - 見下方指南）
+- [ ] T024 [US1] 設定 Cloudflare Pages 環境變數（手動 - 見下方指南）
+- [X] T025 [US1] 建立前端部署 workflow `.github/workflows/deploy-frontend.yml`
+- [ ] T026 [US1] 設定 GitHub Secrets（手動 - 見下方指南）
+- [ ] T027 [US1] 建立 Cloudflare DNS CNAME 記錄（手動 - 見下方指南）
+- [X] T028 [US1] 更新前端環境變數設定 `apps/web/.env.example`
 - [ ] T029 [US1] 驗證：推送程式碼至 main 分支，確認自動部署成功
 
 **Checkpoint**: 前端部署流程完成，可透過 dev 網址存取應用
