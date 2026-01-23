@@ -101,44 +101,44 @@
 
 ### 4.1 ECR Repository
 
-- [ ] T030 [P] [US2] 建立 ECR 模組 `infra/terraform/modules/ecr/main.tf`
-- [ ] T031 [P] [US2] 建立 ECR 模組變數與輸出 `infra/terraform/modules/ecr/variables.tf`, `outputs.tf`
-- [ ] T032 [US2] 設定 ECR Lifecycle Policy（保留 10 個映像檔）
-- [ ] T033 [US2] 整合 ECR 模組至 dev 環境
+- [X] T030 [P] [US2] 建立 ECR 模組 `infra/terraform/modules/ecr/main.tf`
+- [X] T031 [P] [US2] 建立 ECR 模組變數與輸出 `infra/terraform/modules/ecr/variables.tf`, `outputs.tf`
+- [X] T032 [US2] 設定 ECR Lifecycle Policy（保留 10 個映像檔）
+- [X] T033 [US2] 整合 ECR 模組至 dev 環境
 
 ### 4.2 ALB (Application Load Balancer)
 
-- [ ] T034 [P] [US2] 建立 ALB 模組 `infra/terraform/modules/alb/main.tf`
-- [ ] T035 [P] [US2] 建立 ALB 模組變數與輸出 `infra/terraform/modules/alb/variables.tf`, `outputs.tf`
-- [ ] T036 [US2] 設定 ALB Security Group (alb-sg)
-- [ ] T037 [US2] 設定 ALB HTTP Listener (80)（無自訂域名模式，跳過 HTTPS）
-- [ ] T038 [US2] 設定 ALB Target Group 與健康檢查（/health, interval 30s）
+- [X] T034 [P] [US2] 建立 ALB 模組 `infra/terraform/modules/alb/main.tf`
+- [X] T035 [P] [US2] 建立 ALB 模組變數與輸出 `infra/terraform/modules/alb/variables.tf`, `outputs.tf`
+- [X] T036 [US2] 設定 ALB Security Group (alb-sg)
+- [X] T037 [US2] 設定 ALB HTTP Listener (80)（無自訂域名模式，跳過 HTTPS）
+- [X] T038 [US2] 設定 ALB Target Group 與健康檢查（/health, interval 30s）
 - [~] T039 [US2] 申請 ACM 憑證（跳過 - 無自訂域名模式）
-- [ ] T040 [US2] 整合 ALB 模組至 dev 環境
+- [X] T040 [US2] 整合 ALB 模組至 dev 環境
 
 ### 4.3 ECS Cluster & Service
 
-- [ ] T041 [P] [US2] 建立 ECS 模組 `infra/terraform/modules/ecs/main.tf`
-- [ ] T042 [P] [US2] 建立 ECS 模組變數與輸出 `infra/terraform/modules/ecs/variables.tf`, `outputs.tf`
-- [ ] T043 [US2] 建立 ECS Cluster (eventmaster-dev)
-- [ ] T044 [US2] 建立 ECS Task Definition（參考 contracts/ecs-task-definition.json）
-- [ ] T045 [US2] 設定 ECS Task Secrets Manager 整合
-- [ ] T046 [US2] 建立 ECS Service 並啟用 Circuit Breaker
-- [ ] T047 [US2] 設定 ECS Security Group (ecs-tasks-sg)
-- [ ] T048 [US2] 建立 CloudWatch Log Group (/ecs/eventmaster-api-dev)
-- [ ] T049 [US2] 整合 ECS 模組至 dev 環境
+- [X] T041 [P] [US2] 建立 ECS 模組 `infra/terraform/modules/ecs/main.tf`
+- [X] T042 [P] [US2] 建立 ECS 模組變數與輸出 `infra/terraform/modules/ecs/variables.tf`, `outputs.tf`
+- [X] T043 [US2] 建立 ECS Cluster (eventmaster-dev)
+- [X] T044 [US2] 建立 ECS Task Definition（參考 contracts/ecs-task-definition.json）
+- [X] T045 [US2] 設定 ECS Task Secrets Manager 整合
+- [X] T046 [US2] 建立 ECS Service 並啟用 Circuit Breaker
+- [X] T047 [US2] 設定 ECS Security Group (ecs-tasks-sg)
+- [X] T048 [US2] 建立 CloudWatch Log Group (/ecs/eventmaster-api-dev)
+- [X] T049 [US2] 整合 ECS 模組至 dev 環境
 
 ### 4.4 DNS 與 CI/CD
 
 - [~] T050 [US2] 建立 Cloudflare DNS CNAME 記錄（跳過 - 無自訂域名模式，直接使用 ALB DNS）
 - [~] T051 [US2] 啟用 Cloudflare Proxy（跳過 - 無自訂域名模式）
-- [ ] T052 [US2] 建立後端部署 workflow `.github/workflows/deploy-backend.yml`
-- [ ] T053 [US2] 設定 GitHub Secrets（AWS_ROLE_ARN）
-- [ ] T054 [US2] 更新 Dockerfile（若需要）`apps/api/Dockerfile`
+- [X] T052 [US2] 建立後端部署 workflow `.github/workflows/deploy-backend.yml`
+- [ ] T053 [US2] 設定 GitHub Secrets（AWS_ROLE_ARN）- 手動操作
+- [X] T054 [US2] 更新 Dockerfile（若需要）`apps/api/Dockerfile` - 已確認無需更新
 - [X] T055 [US2] 新增健康檢查端點 `/health` 在 `apps/api/main.py`
 - [ ] T056 [US2] 驗證：推送程式碼至 main 分支，確認自動部署成功
 
-**Checkpoint**: 後端部署流程完成，API 可透過 HTTPS 存取
+**Checkpoint**: ✅ 後端部署 Terraform 模組完成（待執行 terraform apply 與設定 GitHub Secret）
 
 ---
 

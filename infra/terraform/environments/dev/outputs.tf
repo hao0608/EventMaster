@@ -17,17 +17,38 @@ output "private_subnet_ids" {
   value       = module.vpc.private_subnet_ids
 }
 
-# ALB Outputs (to be added in Phase 4)
-# output "alb_dns_name" {
-#   description = "ALB DNS name for Cloudflare DNS"
-#   value       = module.alb.dns_name
-# }
+# ECR Outputs
+output "ecr_repository_url" {
+  description = "ECR repository URL for Docker push"
+  value       = module.ecr.repository_url
+}
 
-# ECR Outputs (to be added in Phase 4)
-# output "ecr_repository_url" {
-#   description = "ECR repository URL for Docker push"
-#   value       = module.ecr.repository_url
-# }
+output "ecr_repository_name" {
+  description = "ECR repository name"
+  value       = module.ecr.repository_name
+}
+
+# ALB Outputs
+output "alb_dns_name" {
+  description = "ALB DNS name for API access"
+  value       = module.alb.alb_dns_name
+}
+
+output "api_url" {
+  description = "Full API URL (HTTP in dev mode)"
+  value       = module.alb.api_url
+}
+
+# ECS Outputs
+output "ecs_cluster_name" {
+  description = "ECS cluster name"
+  value       = module.ecs.cluster_name
+}
+
+output "ecs_service_name" {
+  description = "ECS service name"
+  value       = module.ecs.service_name
+}
 
 # Cognito Outputs (to be added in Phase 5)
 # output "cognito_user_pool_id" {

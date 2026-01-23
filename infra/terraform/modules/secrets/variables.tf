@@ -66,6 +66,12 @@ variable "cognito_client_id" {
   default     = ""
 }
 
+variable "allowed_origins" {
+  description = "CORS allowed origins (comma-separated)"
+  type        = string
+  default     = "http://localhost:5173,http://localhost:3000"
+}
+
 variable "tags" {
   description = "Common tags for all resources"
   type        = map(string)

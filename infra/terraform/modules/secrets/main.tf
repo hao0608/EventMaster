@@ -54,5 +54,6 @@ resource "aws_secretsmanager_secret_version" "app" {
     COGNITO_USER_POOL_ID = var.cognito_user_pool_id
     COGNITO_CLIENT_ID    = var.cognito_client_id
     COGNITO_REGION       = var.aws_region
+    ALLOWED_ORIGINS      = var.allowed_origins
   })
 }

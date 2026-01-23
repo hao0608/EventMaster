@@ -80,6 +80,9 @@ module "secrets" {
   cognito_user_pool_id = "pending-cognito-pool"  # Updated in Phase 5 after Cognito creation
   cognito_client_id    = "pending-cognito-client"  # Updated in Phase 5 after Cognito creation
 
+  # CORS configuration - Cloudflare Pages URL will be added after deployment
+  allowed_origins = "http://localhost:5173,http://localhost:3000"
+
   tags = var.tags
 }
 
@@ -95,6 +98,91 @@ module "iam" {
   aws_region   = var.aws_region
   secrets_arns = module.secrets.all_secret_arns
   github_repo  = var.github_repo
+
+  tags = var.tags
+}
+
+# ============================================================================
+# ECR Module
+# ============================================================================
+
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = var.project_name
+  environment  = var.environment
+  tags         = var.tags
+}
+
+# ============================================================================
+# ALB Module
+# ============================================================================
+
+module "alb" {
+  source = "../../modules/alb"
+
+  project_name          = var.project_name
+  environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
+  public_subnet_ids     = module.vpc.public_subnet_ids
+  container_port        = var.container_port
+  certificate_arn       = ""  # No certificate for dev - HTTP only mode
+  health_check_path     = var.alb_health_check_path
+  health_check_interval = var.alb_health_check_interval
+  tags                  = var.tags
+}
+
+# ============================================================================
+# ECS Module
+# ============================================================================
+
+module "ecs" {
+  source = "../../modules/ecs"
+
+  project_name             = var.project_name
+  environment              = var.environment
+  aws_region               = var.aws_region
+  vpc_id                   = module.vpc.vpc_id
+  private_subnet_ids       = module.vpc.private_subnet_ids
+  alb_security_group_id    = module.alb.security_group_id
+  target_group_arn         = module.alb.target_group_arn
+  execution_role_arn       = module.iam.ecs_execution_role_arn
+  task_role_arn            = module.iam.ecs_task_role_arn
+  container_image          = "${module.ecr.repository_url}:latest"
+  container_port           = var.container_port
+  cpu                      = var.ecs_cpu
+  memory                   = var.ecs_memory
+  desired_count            = var.ecs_desired_count
+  cloudflare_pages_project = var.cloudflare_pages_project
+  enable_container_insights = false  # Disabled for dev to reduce costs
+
+  # Secrets from Secrets Manager
+  secrets = [
+    {
+      name      = "DATABASE_URL"
+      valueFrom = "${module.secrets.database_secret_arn}:connection_string::"
+    },
+    {
+      name      = "SECRET_KEY"
+      valueFrom = "${module.secrets.app_secret_arn}:SECRET_KEY::"
+    },
+    {
+      name      = "COGNITO_USER_POOL_ID"
+      valueFrom = "${module.secrets.app_secret_arn}:COGNITO_USER_POOL_ID::"
+    },
+    {
+      name      = "COGNITO_CLIENT_ID"
+      valueFrom = "${module.secrets.app_secret_arn}:COGNITO_CLIENT_ID::"
+    },
+    {
+      name      = "COGNITO_REGION"
+      valueFrom = "${module.secrets.app_secret_arn}:COGNITO_REGION::"
+    },
+    {
+      name      = "ALLOWED_ORIGINS"
+      valueFrom = "${module.secrets.app_secret_arn}:ALLOWED_ORIGINS::"
+    }
+  ]
 
   tags = var.tags
 }
