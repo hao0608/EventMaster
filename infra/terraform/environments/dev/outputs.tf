@@ -46,15 +46,31 @@ output "private_subnet_ids" {
 #   value       = module.rds.endpoint
 # }
 
-# Secrets Manager Outputs (to be added in Phase 2)
-# output "secrets_arn_database" {
-#   description = "Secrets Manager ARN for database credentials"
-#   value       = module.secrets.database_secret_arn
-#   sensitive   = true
-# }
+# Secrets Manager Outputs
+output "secrets_arn_database" {
+  description = "Secrets Manager ARN for database credentials"
+  value       = module.secrets.database_secret_arn
+  sensitive   = true
+}
 
-# output "secrets_arn_app" {
-#   description = "Secrets Manager ARN for app secrets"
-#   value       = module.secrets.app_secret_arn
-#   sensitive   = true
-# }
+output "secrets_arn_app" {
+  description = "Secrets Manager ARN for app secrets"
+  value       = module.secrets.app_secret_arn
+  sensitive   = true
+}
+
+# IAM Outputs
+output "ecs_execution_role_arn" {
+  description = "ARN of ECS execution role"
+  value       = module.iam.ecs_execution_role_arn
+}
+
+output "ecs_task_role_arn" {
+  description = "ARN of ECS task role"
+  value       = module.iam.ecs_task_role_arn
+}
+
+output "github_actions_role_arn" {
+  description = "ARN of GitHub Actions deployment role (use for AWS_ROLE_ARN secret)"
+  value       = module.iam.github_actions_role_arn
+}

@@ -49,26 +49,26 @@
 
 ### 2.1 IAM 與安全性基礎
 
-- [ ] T010 建立 IAM 模組 `infra/terraform/modules/iam/main.tf`
-- [ ] T011 [P] 建立 IAM 模組變數與輸出 `infra/terraform/modules/iam/variables.tf`, `outputs.tf`
-- [ ] T012 建立 ECS Execution Role 在 IAM 模組
-- [ ] T013 建立 ECS Task Role 在 IAM 模組
-- [ ] T014 建立 GitHub Actions OIDC Provider 在 IAM 模組
+- [X] T010 建立 IAM 模組 `infra/terraform/modules/iam/main.tf`
+- [X] T011 [P] 建立 IAM 模組變數與輸出 `infra/terraform/modules/iam/variables.tf`, `outputs.tf`
+- [X] T012 建立 ECS Execution Role 在 IAM 模組
+- [X] T013 建立 ECS Task Role 在 IAM 模組
+- [X] T014 建立 GitHub Actions OIDC Provider 在 IAM 模組
 
 ### 2.2 Secrets Manager
 
-- [ ] T015 建立 Secrets 模組 `infra/terraform/modules/secrets/main.tf`
-- [ ] T016 [P] 建立 Secrets 模組變數與輸出 `infra/terraform/modules/secrets/variables.tf`, `outputs.tf`
-- [ ] T017 建立 database secret 定義
-- [ ] T018 建立 app secret 定義
+- [X] T015 建立 Secrets 模組 `infra/terraform/modules/secrets/main.tf`
+- [X] T016 [P] 建立 Secrets 模組變數與輸出 `infra/terraform/modules/secrets/variables.tf`, `outputs.tf`
+- [X] T017 建立 database secret 定義
+- [X] T018 建立 app secret 定義
 
 ### 2.3 整合至 dev 環境
 
-- [ ] T019 整合 VPC 模組至 `infra/terraform/environments/dev/main.tf`
-- [ ] T020 整合 IAM 模組至 `infra/terraform/environments/dev/main.tf`
-- [ ] T021 整合 Secrets 模組至 `infra/terraform/environments/dev/main.tf`
+- [X] T019 整合 VPC 模組至 `infra/terraform/environments/dev/main.tf`
+- [X] T020 整合 IAM 模組至 `infra/terraform/environments/dev/main.tf`
+- [X] T021 整合 Secrets 模組至 `infra/terraform/environments/dev/main.tf`
 
-**Checkpoint**: 基礎設施就緒 - 可開始 User Story 實作
+**Checkpoint**: ✅ 基礎設施就緒 - 可開始 User Story 實作
 
 ---
 

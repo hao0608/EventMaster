@@ -129,3 +129,10 @@ variable "alb_health_check_interval" {
   type        = number
   default     = 30
 }
+
+# GitHub configuration
+variable "github_repo" {
+  description = "GitHub repository in format 'org/repo' for OIDC federation"
+  type        = string
+  default     = "*/*"
+}
