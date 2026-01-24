@@ -133,7 +133,7 @@
 - [~] T050 [US2] 建立 Cloudflare DNS CNAME 記錄（跳過 - 無自訂域名模式，直接使用 ALB DNS）
 - [~] T051 [US2] 啟用 Cloudflare Proxy（跳過 - 無自訂域名模式）
 - [X] T052 [US2] 建立後端部署 workflow `.github/workflows/deploy-backend.yml`
-- [ ] T053 [US2] 設定 GitHub Secrets（AWS_ROLE_ARN）- 手動操作
+- [X] T053 [US2] 設定 GitHub Secrets（AWS_ROLE_ARN）- 手動操作
 - [X] T054 [US2] 更新 Dockerfile（若需要）`apps/api/Dockerfile` - 已確認無需更新
 - [X] T055 [US2] 新增健康檢查端點 `/health` 在 `apps/api/main.py`
 - [ ] T056 [US2] 驗證：推送程式碼至 main 分支，確認自動部署成功
@@ -191,22 +191,22 @@
 
 ### 6.1 RDS PostgreSQL
 
-- [ ] T076 [P] [US4] 建立 RDS 模組 `infra/terraform/modules/rds/main.tf`
-- [ ] T077 [P] [US4] 建立 RDS 模組變數與輸出 `infra/terraform/modules/rds/variables.tf`, `outputs.tf`
-- [ ] T078 [US4] 建立 RDS Instance（PostgreSQL 15, db.t3.micro）
-- [ ] T079 [US4] 設定 RDS Security Group（僅允許 ecs-tasks-sg 存取）
-- [ ] T080 [US4] 設定 RDS 於 Private Subnet
-- [ ] T081 [US4] 將 RDS 連線資訊存入 Secrets Manager
-- [ ] T082 [US4] 整合 RDS 模組至 dev 環境
+- [X] T076 [P] [US4] 建立 RDS 模組 `infra/terraform/modules/rds/main.tf`
+- [X] T077 [P] [US4] 建立 RDS 模組變數與輸出 `infra/terraform/modules/rds/variables.tf`, `outputs.tf`
+- [X] T078 [US4] 建立 RDS Instance（PostgreSQL 15, db.t3.micro）
+- [X] T079 [US4] 設定 RDS Security Group（使用 private subnet CIDR 避免循環依賴）
+- [X] T080 [US4] 設定 RDS 於 Private Subnet
+- [X] T081 [US4] 將 RDS 連線資訊存入 Secrets Manager（透過 secrets 模組整合）
+- [X] T082 [US4] 整合 RDS 模組至 dev 環境
 
 ### 6.2 後端資料庫連線
 
-- [ ] T083 [US4] 修改 config.py 支援從 Secrets Manager 讀取 DATABASE_URL `apps/api/src/core/config.py`
-- [ ] T084 [US4] 確認 SQLAlchemy 連線池設定 `apps/api/src/database.py`
-- [ ] T085 [US4] 執行 Alembic 資料庫遷移（若有）
-- [ ] T086 [US4] 驗證：部署後 API 可正常存取資料庫
+- [X] T083 [US4] 修改 config.py 支援從 Secrets Manager 讀取 DATABASE_URL（ECS 透過 secrets 注入環境變數）
+- [X] T084 [US4] 確認 SQLAlchemy 連線池設定 `apps/api/src/database.py`（新增 PostgreSQL pool 設定）
+- [~] T085 [US4] 執行 Alembic 資料庫遷移（N/A - 專案使用 init_db() 自動建立資料表）
+- [X] T086 [US4] 驗證：部署後 API 可正常存取資料庫 ✅ 已驗證
 
-**Checkpoint**: RDS 整合完成，後端可執行資料庫操作
+**Checkpoint**: ✅ RDS 整合完成，後端可執行資料庫操作
 
 ---
 

@@ -58,6 +58,32 @@ module "vpc" {
 }
 
 # ============================================================================
+# RDS Module
+# ============================================================================
+
+module "rds" {
+  source = "../../modules/rds"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  vpc_id             = module.vpc.vpc_id
+  private_subnet_ids = module.vpc.private_subnet_ids
+
+  # Security: Allow connections from private subnets where ECS tasks run
+  allowed_cidr_blocks = module.vpc.private_subnet_cidrs
+
+  # Database configuration
+  engine_version    = var.rds_engine_version
+  instance_class    = var.rds_instance_class
+  allocated_storage = var.rds_allocated_storage
+  database_name     = var.rds_database_name
+  db_username       = "eventmaster"
+  db_password       = random_password.db_password.result
+
+  tags = var.tags
+}
+
+# ============================================================================
 # Secrets Module
 # ============================================================================
 
@@ -68,17 +94,17 @@ module "secrets" {
   environment  = var.environment
   aws_region   = var.aws_region
 
-  # Database credentials (host will be updated after RDS is created)
-  db_username = "eventmaster"
+  # Database credentials from RDS module
+  db_username = module.rds.db_username
   db_password = random_password.db_password.result
-  db_host     = "pending-rds-endpoint"  # Updated in Phase 6 after RDS creation
-  db_port     = "5432"
-  db_name     = var.rds_database_name
+  db_host     = module.rds.db_host
+  db_port     = tostring(module.rds.db_port)
+  db_name     = module.rds.db_name
 
   # Application secrets (Cognito IDs will be updated after Cognito is created)
   app_secret_key       = random_password.app_secret_key.result
-  cognito_user_pool_id = "pending-cognito-pool"  # Updated in Phase 5 after Cognito creation
-  cognito_client_id    = "pending-cognito-client"  # Updated in Phase 5 after Cognito creation
+  cognito_user_pool_id = "pending-cognito-pool"   # Updated in Phase 5 after Cognito creation
+  cognito_client_id    = "pending-cognito-client" # Updated in Phase 5 after Cognito creation
 
   # CORS configuration - Cloudflare Pages URL will be added after deployment
   allowed_origins = "http://localhost:5173,http://localhost:3000"
@@ -126,7 +152,7 @@ module "alb" {
   vpc_id                = module.vpc.vpc_id
   public_subnet_ids     = module.vpc.public_subnet_ids
   container_port        = var.container_port
-  certificate_arn       = ""  # No certificate for dev - HTTP only mode
+  certificate_arn       = "" # No certificate for dev - HTTP only mode
   health_check_path     = var.alb_health_check_path
   health_check_interval = var.alb_health_check_interval
   tags                  = var.tags
@@ -139,22 +165,22 @@ module "alb" {
 module "ecs" {
   source = "../../modules/ecs"
 
-  project_name             = var.project_name
-  environment              = var.environment
-  aws_region               = var.aws_region
-  vpc_id                   = module.vpc.vpc_id
-  private_subnet_ids       = module.vpc.private_subnet_ids
-  alb_security_group_id    = module.alb.security_group_id
-  target_group_arn         = module.alb.target_group_arn
-  execution_role_arn       = module.iam.ecs_execution_role_arn
-  task_role_arn            = module.iam.ecs_task_role_arn
-  container_image          = "${module.ecr.repository_url}:latest"
-  container_port           = var.container_port
-  cpu                      = var.ecs_cpu
-  memory                   = var.ecs_memory
-  desired_count            = var.ecs_desired_count
-  cloudflare_pages_project = var.cloudflare_pages_project
-  enable_container_insights = false  # Disabled for dev to reduce costs
+  project_name              = var.project_name
+  environment               = var.environment
+  aws_region                = var.aws_region
+  vpc_id                    = module.vpc.vpc_id
+  private_subnet_ids        = module.vpc.private_subnet_ids
+  alb_security_group_id     = module.alb.security_group_id
+  target_group_arn          = module.alb.target_group_arn
+  execution_role_arn        = module.iam.ecs_execution_role_arn
+  task_role_arn             = module.iam.ecs_task_role_arn
+  container_image           = "${module.ecr.repository_url}:latest"
+  container_port            = var.container_port
+  cpu                       = var.ecs_cpu
+  memory                    = var.ecs_memory
+  desired_count             = var.ecs_desired_count
+  cloudflare_pages_project  = var.cloudflare_pages_project
+  enable_container_insights = false # Disabled for dev to reduce costs
 
   # Secrets from Secrets Manager
   secrets = [
