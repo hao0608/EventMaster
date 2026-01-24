@@ -48,6 +48,9 @@ cognito_mfa_configuration = "OFF"
 alb_health_check_path = "/health"
 alb_health_check_interval = 30
 
+# GitHub configuration
+github_repo = "hao0608/EventMaster"
+
 # Tags
 tags = {
   Environment = "dev"

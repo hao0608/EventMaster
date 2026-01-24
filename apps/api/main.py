@@ -19,7 +19,7 @@ from src.routes import (
 
 def get_allowed_origins() -> list[str]:
     """Build list of allowed origins including Cloudflare Pages wildcard support."""
-    origins = list(settings.ALLOWED_ORIGINS)
+    origins = list(settings.allowed_origins_list)
     return origins
 
 
@@ -29,7 +29,7 @@ def is_allowed_origin(origin: str) -> bool:
         return False
 
     # Check exact match
-    if origin in settings.ALLOWED_ORIGINS:
+    if origin in settings.allowed_origins_list:
         return True
 
     # Check Cloudflare Pages wildcard (*.PROJECT.pages.dev)
@@ -101,7 +101,7 @@ else:
     # Use standard CORS middleware for static origins
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.ALLOWED_ORIGINS,
+        allow_origins=settings.allowed_origins_list,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
