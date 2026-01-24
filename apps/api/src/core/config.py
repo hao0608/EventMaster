@@ -1,5 +1,6 @@
 """Application configuration using Pydantic Settings"""
 from pydantic_settings import BaseSettings
+from pydantic import computed_field
 from typing import List
 
 
@@ -24,14 +25,15 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
-    # CORS
-    # Default: localhost for development
-    # Production: Set via ALLOWED_ORIGINS environment variable
+    # CORS - can be set as comma-separated string in environment variable
     # Format: comma-separated URLs (e.g., "https://app.pages.dev,https://example.com")
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ]
+    ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
+
+    @computed_field
+    @property
+    def allowed_origins_list(self) -> List[str]:
+        """Parse ALLOWED_ORIGINS from comma-separated string to list."""
+        return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",") if origin.strip()]
 
     # Cloudflare Pages wildcard support (set to your project name, e.g., "eventmaster-web")
     # This allows *.eventmaster-web.pages.dev
@@ -43,6 +45,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+        extra = "ignore"  # Allow extra environment variables (e.g., AWS credentials)
 
 
 settings = Settings()
