@@ -21,6 +21,11 @@ output "private_subnet_ids" {
   value       = aws_subnet.private[*].id
 }
 
+output "private_subnet_cidrs" {
+  description = "List of private subnet CIDR blocks"
+  value       = aws_subnet.private[*].cidr_block
+}
+
 output "nat_gateway_id" {
   description = "NAT Gateway ID"
   value       = aws_nat_gateway.main[0].id

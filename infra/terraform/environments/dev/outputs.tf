@@ -61,11 +61,21 @@ output "ecs_service_name" {
 #   value       = module.cognito.client_id
 # }
 
-# RDS Outputs (to be added in Phase 6)
-# output "rds_endpoint" {
-#   description = "RDS endpoint (hostname:port)"
-#   value       = module.rds.endpoint
-# }
+# RDS Outputs
+output "rds_endpoint" {
+  description = "RDS endpoint (hostname:port)"
+  value       = module.rds.db_endpoint
+}
+
+output "rds_host" {
+  description = "RDS hostname"
+  value       = module.rds.db_host
+}
+
+output "rds_database_name" {
+  description = "RDS database name"
+  value       = module.rds.db_name
+}
 
 # Secrets Manager Outputs
 output "secrets_arn_database" {

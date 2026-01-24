@@ -136,13 +136,13 @@ resource "aws_security_group" "ecs_tasks" {
 
 # ECS Service
 resource "aws_ecs_service" "api" {
-  name                               = "${var.project_name}-api-${var.environment}"
-  cluster                            = aws_ecs_cluster.main.id
-  task_definition                    = aws_ecs_task_definition.api.arn
-  desired_count                      = var.desired_count
-  launch_type                        = "FARGATE"
-  platform_version                   = "LATEST"
-  health_check_grace_period_seconds  = 60
+  name                              = "${var.project_name}-api-${var.environment}"
+  cluster                           = aws_ecs_cluster.main.id
+  task_definition                   = aws_ecs_task_definition.api.arn
+  desired_count                     = var.desired_count
+  launch_type                       = "FARGATE"
+  platform_version                  = "LATEST"
+  health_check_grace_period_seconds = 60
 
   network_configuration {
     security_groups  = [aws_security_group.ecs_tasks.id]
