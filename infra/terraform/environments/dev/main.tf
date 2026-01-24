@@ -1,0 +1,188 @@
+# Dev Environment - Main Configuration
+# Feature: 002-dev-deployment-arch
+#
+# This file orchestrates all modules for the dev environment
+
+terraform {
+  required_version = ">= 1.5.0"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.5"
+    }
+  }
+
+  # Backend configuration from ../../backend.tf
+}
+
+provider "aws" {
+  region = var.aws_region
+
+  default_tags {
+    tags = var.tags
+  }
+}
+
+# ============================================================================
+# Random Password Generation
+# ============================================================================
+
+resource "random_password" "db_password" {
+  length           = 32
+  special          = true
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+resource "random_password" "app_secret_key" {
+  length  = 64
+  special = false
+}
+
+# ============================================================================
+# VPC Module
+# ============================================================================
+
+module "vpc" {
+  source = "../../modules/vpc"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  vpc_cidr           = var.vpc_cidr
+  availability_zones = var.availability_zones
+  tags               = var.tags
+}
+
+# ============================================================================
+# Secrets Module
+# ============================================================================
+
+module "secrets" {
+  source = "../../modules/secrets"
+
+  project_name = var.project_name
+  environment  = var.environment
+  aws_region   = var.aws_region
+
+  # Database credentials (host will be updated after RDS is created)
+  db_username = "eventmaster"
+  db_password = random_password.db_password.result
+  db_host     = "pending-rds-endpoint"  # Updated in Phase 6 after RDS creation
+  db_port     = "5432"
+  db_name     = var.rds_database_name
+
+  # Application secrets (Cognito IDs will be updated after Cognito is created)
+  app_secret_key       = random_password.app_secret_key.result
+  cognito_user_pool_id = "pending-cognito-pool"  # Updated in Phase 5 after Cognito creation
+  cognito_client_id    = "pending-cognito-client"  # Updated in Phase 5 after Cognito creation
+
+  # CORS configuration - Cloudflare Pages URL will be added after deployment
+  allowed_origins = "http://localhost:5173,http://localhost:3000"
+
+  tags = var.tags
+}
+
+# ============================================================================
+# IAM Module
+# ============================================================================
+
+module "iam" {
+  source = "../../modules/iam"
+
+  project_name = var.project_name
+  environment  = var.environment
+  aws_region   = var.aws_region
+  secrets_arns = module.secrets.all_secret_arns
+  github_repo  = var.github_repo
+
+  tags = var.tags
+}
+
+# ============================================================================
+# ECR Module
+# ============================================================================
+
+module "ecr" {
+  source = "../../modules/ecr"
+
+  project_name = var.project_name
+  environment  = var.environment
+  tags         = var.tags
+}
+
+# ============================================================================
+# ALB Module
+# ============================================================================
+
+module "alb" {
+  source = "../../modules/alb"
+
+  project_name          = var.project_name
+  environment           = var.environment
+  vpc_id                = module.vpc.vpc_id
+  public_subnet_ids     = module.vpc.public_subnet_ids
+  container_port        = var.container_port
+  certificate_arn       = ""  # No certificate for dev - HTTP only mode
+  health_check_path     = var.alb_health_check_path
+  health_check_interval = var.alb_health_check_interval
+  tags                  = var.tags
+}
+
+# ============================================================================
+# ECS Module
+# ============================================================================
+
+module "ecs" {
+  source = "../../modules/ecs"
+
+  project_name             = var.project_name
+  environment              = var.environment
+  aws_region               = var.aws_region
+  vpc_id                   = module.vpc.vpc_id
+  private_subnet_ids       = module.vpc.private_subnet_ids
+  alb_security_group_id    = module.alb.security_group_id
+  target_group_arn         = module.alb.target_group_arn
+  execution_role_arn       = module.iam.ecs_execution_role_arn
+  task_role_arn            = module.iam.ecs_task_role_arn
+  container_image          = "${module.ecr.repository_url}:latest"
+  container_port           = var.container_port
+  cpu                      = var.ecs_cpu
+  memory                   = var.ecs_memory
+  desired_count            = var.ecs_desired_count
+  cloudflare_pages_project = var.cloudflare_pages_project
+  enable_container_insights = false  # Disabled for dev to reduce costs
+
+  # Secrets from Secrets Manager
+  secrets = [
+    {
+      name      = "DATABASE_URL"
+      valueFrom = "${module.secrets.database_secret_arn}:connection_string::"
+    },
+    {
+      name      = "SECRET_KEY"
+      valueFrom = "${module.secrets.app_secret_arn}:SECRET_KEY::"
+    },
+    {
+      name      = "COGNITO_USER_POOL_ID"
+      valueFrom = "${module.secrets.app_secret_arn}:COGNITO_USER_POOL_ID::"
+    },
+    {
+      name      = "COGNITO_CLIENT_ID"
+      valueFrom = "${module.secrets.app_secret_arn}:COGNITO_CLIENT_ID::"
+    },
+    {
+      name      = "COGNITO_REGION"
+      valueFrom = "${module.secrets.app_secret_arn}:COGNITO_REGION::"
+    },
+    {
+      name      = "ALLOWED_ORIGINS"
+      valueFrom = "${module.secrets.app_secret_arn}:ALLOWED_ORIGINS::"
+    }
+  ]
+
+  tags = var.tags
+}

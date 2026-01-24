@@ -1,0 +1,93 @@
+# Cloudflare Pages Configuration
+# Feature: 002-dev-deployment-arch
+# Date: 2026-01-23
+
+apiVersion: v1
+kind: CloudflarePagesConfig
+metadata:
+  name: eventmaster-web
+  environment: dev
+
+spec:
+  # 專案設定
+  project:
+    name: eventmaster-web
+    productionBranch: main
+
+  # 建置設定
+  build:
+    framework: vite
+    buildCommand: "cd apps/web && npm ci && npm run build"
+    buildOutputDirectory: "apps/web/dist"
+    rootDirectory: "/"
+
+    # Node.js 版本
+    nodeVersion: "18"
+
+  # 環境變數
+  environmentVariables:
+    production:
+      VITE_API_BASE_URL: "https://api-dev.eventmaster.example.com"
+      VITE_COGNITO_USER_POOL_ID: "${COGNITO_USER_POOL_ID}"
+      VITE_COGNITO_CLIENT_ID: "${COGNITO_CLIENT_ID}"
+      VITE_COGNITO_REGION: "ap-northeast-1"
+      VITE_ENVIRONMENT: "dev"
+
+    preview:
+      VITE_API_BASE_URL: "https://api-dev.eventmaster.example.com"
+      VITE_COGNITO_USER_POOL_ID: "${COGNITO_USER_POOL_ID}"
+      VITE_COGNITO_CLIENT_ID: "${COGNITO_CLIENT_ID}"
+      VITE_COGNITO_REGION: "ap-northeast-1"
+      VITE_ENVIRONMENT: "preview"
+
+  # 自訂網域
+  customDomains:
+    - hostname: "dev.eventmaster.example.com"
+      zone: "eventmaster.example.com"
+
+  # 部署設定
+  deployments:
+    # 自動部署設定
+    autoDeployments:
+      enabled: true
+      # 僅在 apps/web/ 有變更時觸發
+      includePaths:
+        - "apps/web/**"
+
+    # Preview 部署
+    previewDeployments:
+      enabled: true
+      # 產生 preview URL 給 PR
+
+  # Headers 設定 (透過 _headers 檔案)
+  headers:
+    - path: "/*"
+      values:
+        X-Frame-Options: "DENY"
+        X-Content-Type-Options: "nosniff"
+        Referrer-Policy: "strict-origin-when-cross-origin"
+        Permissions-Policy: "camera=(), microphone=(), geolocation=()"
+
+    - path: "/assets/*"
+      values:
+        Cache-Control: "public, max-age=31536000, immutable"
+
+  # Redirects 設定 (透過 _redirects 檔案)
+  redirects:
+    # SPA fallback
+    - from: "/*"
+      to: "/index.html"
+      status: 200
+
+---
+# DNS Configuration (Cloudflare)
+#
+# Type: CNAME
+# Name: dev
+# Target: <pages-project>.pages.dev
+# Proxy: ON (橘雲)
+#
+# SSL/TLS:
+# - Mode: Full (strict)
+# - Always Use HTTPS: ON
+# - Minimum TLS: 1.2

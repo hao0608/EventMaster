@@ -1,0 +1,57 @@
+# Terraform Variables - Dev Environment
+# Feature: 002-dev-deployment-arch
+#
+# Copy this file to terraform.tfvars and fill in your values
+# cp terraform.tfvars.example terraform.tfvars
+
+# AWS Configuration
+aws_region = "ap-northeast-1"
+environment = "dev"
+project_name = "eventmaster"
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+availability_zones = ["ap-northeast-1a", "ap-northeast-1c"]
+
+# Domain Configuration
+# Option 1: With custom domain (recommended for production)
+# domain_name = "eventmaster.example.com"
+# api_subdomain = "api-dev"
+
+# Option 2: No custom domain (dev-only mode)
+# Leave domain_name empty to use ALB DNS directly (HTTP only)
+domain_name = ""
+api_subdomain = "api-dev"
+
+# Cloudflare Pages Configuration
+# Set to your Cloudflare Pages project name for CORS wildcard support
+# Example: If your URL is https://eventmaster-web.pages.dev, use "eventmaster-web"
+cloudflare_pages_project = ""
+
+# ECS Configuration
+ecs_cpu = 256
+ecs_memory = 512
+ecs_desired_count = 1
+container_port = 8000
+
+# RDS Configuration
+rds_instance_class = "db.t3.micro"
+rds_allocated_storage = 20
+rds_engine_version = "15"
+rds_database_name = "eventmaster_dev"
+
+# Cognito Configuration
+cognito_password_min_length = 8
+cognito_mfa_configuration = "OFF"
+
+# ALB Configuration
+alb_health_check_path = "/health"
+alb_health_check_interval = 30
+
+# Tags
+tags = {
+  Environment = "dev"
+  Project     = "eventmaster"
+  ManagedBy   = "terraform"
+  Feature     = "002-dev-deployment-arch"
+}

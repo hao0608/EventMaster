@@ -25,10 +25,17 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # CORS
+    # Default: localhost for development
+    # Production: Set via ALLOWED_ORIGINS environment variable
+    # Format: comma-separated URLs (e.g., "https://app.pages.dev,https://example.com")
     ALLOWED_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://localhost:5173",
     ]
+
+    # Cloudflare Pages wildcard support (set to your project name, e.g., "eventmaster-web")
+    # This allows *.eventmaster-web.pages.dev
+    CLOUDFLARE_PAGES_PROJECT: str = ""
 
     # Logging
     LOG_LEVEL: str = "INFO"
