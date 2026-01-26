@@ -35,8 +35,24 @@ output "alb_dns_name" {
 }
 
 output "api_url" {
-  description = "Full API URL (HTTP in dev mode)"
+  description = "Full API URL (use CloudFront HTTPS URL for frontend)"
+  value       = module.cloudfront.api_url
+}
+
+output "api_url_alb" {
+  description = "Direct ALB URL (HTTP - internal use only)"
   value       = module.alb.api_url
+}
+
+# CloudFront Outputs
+output "cloudfront_distribution_id" {
+  description = "CloudFront distribution ID"
+  value       = module.cloudfront.distribution_id
+}
+
+output "cloudfront_domain_name" {
+  description = "CloudFront domain name (*.cloudfront.net)"
+  value       = module.cloudfront.domain_name
 }
 
 # ECS Outputs
