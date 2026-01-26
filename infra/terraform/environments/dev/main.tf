@@ -149,8 +149,8 @@ module "secrets" {
   cognito_user_pool_id = module.cognito.user_pool_id
   cognito_client_id    = module.cognito.app_client_id
 
-  # CORS configuration - Cloudflare Pages URL will be added after deployment
-  allowed_origins = "http://localhost:5173,http://localhost:3000"
+  # CORS configuration - include Cloudflare Pages URL
+  allowed_origins = "http://localhost:5173,http://localhost:3000,https://${var.cloudflare_pages_project}"
 
   tags = var.tags
 
@@ -201,6 +201,20 @@ module "alb" {
   health_check_path     = var.alb_health_check_path
   health_check_interval = var.alb_health_check_interval
   tags                  = var.tags
+}
+
+# ============================================================================
+# CloudFront Module (HTTPS for ALB)
+# ============================================================================
+
+module "cloudfront" {
+  source = "../../modules/cloudfront"
+
+  environment         = var.environment
+  project_name        = var.project_name
+  alb_dns_name        = module.alb.alb_dns_name
+  price_class         = "PriceClass_100"  # US, Canada, Europe (cheapest)
+  wait_for_deployment = false
 }
 
 # ============================================================================
