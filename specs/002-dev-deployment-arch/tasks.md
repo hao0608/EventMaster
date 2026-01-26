@@ -246,14 +246,17 @@
 
 **Purpose**: 跨 User Story 的改善與最終驗證
 
-- [ ] T094 [P] 更新 README.md 新增 dev 環境部署說明
-- [ ] T095 [P] 更新 CLAUDE.md 新增 Terraform 相關指引
-- [ ] T096 完整執行 quickstart.md 驗證所有步驟
-- [ ] T097 [P] 清理 Terraform 程式碼（格式化、移除未使用資源）
-- [ ] T098 [P] 確認所有 Secrets 已正確設定且無硬編碼
-- [ ] T099 驗證 Circuit Breaker：故意部署失敗的映像檔，確認自動回滾
-- [ ] T100 驗證 Cloudflare Proxy：確認 DDoS 防護與 WAF 啟用
-- [ ] T101 建立 Terraform state 備份策略文件
+- [X] T094 [P] 更新 README.md 新增 dev 環境部署說明 ✅
+- [X] T095 [P] 更新 CLAUDE.md 新增 Terraform 相關指引 ✅
+- [X] T096 完整執行 quickstart.md 驗證所有步驟 ✅
+  - Terraform outputs 可用 ✅
+  - API 健康檢查通過 ✅
+  - Cognito 認證已於 Phase 5 驗證 ✅
+- [X] T097 [P] 清理 Terraform 程式碼（格式化、移除未使用資源）✅ terraform fmt 已執行
+- [X] T098 [P] 確認所有 Secrets 已正確設定且無硬編碼 ✅ 所有 secrets 使用 random_password
+- [ ] T099 驗證 Circuit Breaker：故意部署失敗的映像檔，確認自動回滾 (需手動驗證)
+- [ ] T100 驗證 Cloudflare Proxy：確認 DDoS 防護與 WAF 啟用 (需手動驗證)
+- [X] T101 建立 Terraform state 備份策略文件 ✅ infra/terraform/STATE_BACKUP_STRATEGY.md
 
 ---
 

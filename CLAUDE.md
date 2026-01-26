@@ -808,6 +808,75 @@ alembic upgrade head
 
 4. **Update Seed Data** (if needed) (`apps/api/seed_data.py`)
 
+### Infrastructure with Terraform
+
+**File Structure**:
+```
+infra/terraform/
+├── modules/           # Reusable Terraform modules
+│   ├── vpc/          # VPC, subnets, NAT gateway
+│   ├── ecs/          # ECS cluster, service, task definition
+│   ├── rds/          # RDS PostgreSQL instance
+│   ├── cognito/      # Cognito User Pool, app client, groups
+│   ├── secrets/      # Secrets Manager secrets
+│   └── iam/          # IAM roles and policies
+└── environments/
+    └── dev/          # Dev environment configuration
+        ├── main.tf
+        ├── variables.tf
+        ├── outputs.tf
+        └── terraform.tfvars
+```
+
+**Terraform Workflow**:
+```bash
+# Navigate to environment
+cd infra/terraform/environments/dev
+
+# Initialize (required after adding new modules)
+terraform init
+
+# Preview changes
+terraform plan -out=tfplan
+
+# Apply changes
+terraform apply tfplan
+
+# View outputs
+terraform output
+
+# Destroy (caution!)
+terraform destroy
+```
+
+**Module Usage Pattern**:
+```hcl
+# infra/terraform/environments/dev/main.tf
+module "cognito" {
+  source = "../../modules/cognito"
+
+  environment    = var.environment
+  user_pool_name = "eventmaster-${var.environment}"
+  callback_urls  = ["https://example.com/callback"]
+  logout_urls    = ["https://example.com/logout"]
+}
+```
+
+**Terraform Conventions**:
+1. **Always use modules** - No resources directly in environment files
+2. **Use variables** - All configurable values as variables with defaults
+3. **Expose outputs** - Export all values other modules/environments need
+4. **State management** - Use S3 backend for state (not local)
+5. **Naming convention** - `resourcetype-project-environment` (e.g., `eventmaster-rds-dev`)
+
+**Adding New AWS Resources**:
+1. Create module in `infra/terraform/modules/<resource>/`
+2. Define `main.tf`, `variables.tf`, `outputs.tf`
+3. Integrate module in `infra/terraform/environments/dev/main.tf`
+4. Run `terraform init` to load new module
+5. Run `terraform plan` to preview changes
+6. Run `terraform apply` to deploy
+
 ### Debugging Common Issues
 
 **Issue: CORS Error in Browser**
