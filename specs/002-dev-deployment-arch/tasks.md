@@ -176,10 +176,22 @@
 
 ### 5.4 驗證
 
-- [ ] T074 [US3] 建立測試使用者（admin, organizer, member）
-- [ ] T075 [US3] 驗證：前端登入 → 取得 JWT → 呼叫受保護 API → 確認 RBAC 運作
+- [X] T074 [US3] 建立測試使用者（admin, organizer, member） ✅ 已完成
+  - 測試帳號: admin@eventmaster.test, organizer@eventmaster.test, member@eventmaster.test
+  - 密碼: AdminPass123!, OrganizerPass123!, MemberPass123!
+- [X] T075 [US3] 驗證：前端登入 → 取得 JWT → 呼叫受保護 API → 確認 RBAC 運作 ✅ 已驗證
+  - Admin 取得 admin 角色 ✅
+  - Organizer 取得 organizer 角色 ✅
+  - Member 取得 member 角色 ✅
+  - RBAC 運作正常 (Admin 可存取 /users, Organizer/Member 被拒絕 403) ✅
 
-**Checkpoint**: Cognito 認證整合完成，RBAC 運作正常
+**Checkpoint**: ✅ Cognito 認證整合完成，RBAC 運作正常
+
+**測試資源**:
+- 完整測試指南: `specs/002-dev-deployment-arch/COGNITO_TESTING.md`
+- 自動化腳本: `specs/002-dev-deployment-arch/scripts/`
+  - `create-test-users.sh` - 建立測試使用者
+  - `verify-cognito-auth.sh` - 驗證認證流程
 
 ---
 

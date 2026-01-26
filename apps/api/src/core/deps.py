@@ -138,7 +138,7 @@ def _create_or_update_cognito_user(user_id: str, payload: dict, db: Session) -> 
         user = User(
             id=user_id,
             email=email,
-            password_hash="",  # Cognito users don't use password hash
+            hashed_password="",  # Cognito users don't use password hash
             display_name=payload.get("name", email.split("@")[0]),
             role=role
         )
