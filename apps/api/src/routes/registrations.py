@@ -121,9 +121,15 @@ def get_my_registrations(
 ):
     """
     Get current user's registrations
+
+    Only returns registrations for published events.
+    Registrations for rejected or pending events are hidden.
     """
-    query = db.query(Registration).filter(
-        Registration.user_id == current_user.id
+    query = db.query(Registration).join(
+        Event, Registration.event_id == Event.id
+    ).filter(
+        Registration.user_id == current_user.id,
+        Event.status == EventStatus.PUBLISHED
     ).order_by(Registration.created_at.desc())
 
     total = query.count()
