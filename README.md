@@ -108,4 +108,98 @@ eventmaster/
 *   **`apps/web/`**: 前端應用程式主目錄，包含所有 React 元件、頁面與服務
 *   **`docs/`**: 專案文件，包含產品規格與技術架構說明
 *   **`apps/api/`**: 後端 API 目錄（FastAPI + SQLAlchemy）
-*   **`infra/` & `docker/`**: 基礎設施與容器化配置（預留）
+*   **`infra/`**: 基礎設施配置
+    *   `infra/terraform/`: Terraform IaC 配置
+        *   `modules/`: 可重用的 Terraform 模組 (VPC, ECS, RDS, Cognito 等)
+        *   `environments/dev/`: Dev 環境設定
+
+---
+
+## 🌐 Dev 環境部署 (AWS Deployment)
+
+本專案使用 Terraform 部署至 AWS，架構包含：
+- **前端**: Cloudflare Pages (自動部署)
+- **後端**: AWS ECS Fargate + ALB
+- **資料庫**: AWS RDS PostgreSQL
+- **認證**: AWS Cognito User Pool
+
+### 前置條件
+
+1. 安裝 [Terraform](https://www.terraform.io/downloads) >= 1.0
+2. 安裝 [AWS CLI](https://aws.amazon.com/cli/) 並設定認證
+3. 安裝 [Docker](https://www.docker.com/) (用於建置後端映像檔)
+
+### 部署步驟
+
+#### 1. 初始化 Terraform
+
+```bash
+cd infra/terraform/environments/dev
+
+# 複製並編輯設定檔
+cp terraform.tfvars.example terraform.tfvars
+# 編輯 terraform.tfvars 設定 AWS region 等參數
+
+# 初始化 Terraform
+terraform init
+
+# 檢視部署計畫
+terraform plan -out=tfplan
+
+# 執行部署
+terraform apply tfplan
+```
+
+#### 2. 建置並部署後端
+
+```bash
+# 取得 ECR 登入權杖
+aws ecr get-login-password --region ap-northeast-1 | docker login --username AWS --password-stdin <account-id>.dkr.ecr.ap-northeast-1.amazonaws.com
+
+# 建置 Docker 映像檔
+cd apps/api
+docker build -t eventmaster-api .
+
+# 推送至 ECR
+docker tag eventmaster-api:latest <ecr-repo-url>:latest
+docker push <ecr-repo-url>:latest
+
+# 強制 ECS 服務更新
+aws ecs update-service --cluster eventmaster-cluster-dev --service eventmaster-api-dev --force-new-deployment
+```
+
+#### 3. 建立 Cognito 測試使用者
+
+```bash
+# 執行測試使用者建立腳本
+./specs/002-dev-deployment-arch/scripts/create-test-users.sh
+```
+
+### Dev 環境測試帳號
+
+部署完成後，可使用以下 Cognito 測試帳號：
+
+| 角色 | Email | 密碼 | 權限 |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin@eventmaster.test` | `AdminPass123!` | 系統全權限 |
+| **Organizer** | `organizer@eventmaster.test` | `OrganizerPass123!` | 建立活動、驗票 |
+| **Member** | `member@eventmaster.test` | `MemberPass123!` | 瀏覽活動、報名 |
+
+### 取得部署資訊
+
+```bash
+cd infra/terraform/environments/dev
+
+# 取得 API 端點
+terraform output api_url
+
+# 取得 Cognito 設定
+terraform output cognito_user_pool_id
+terraform output cognito_client_id
+```
+
+### 完整部署指南
+
+詳細的部署步驟與除錯指引請參考：
+- **[快速部署指南 (quickstart.md)](specs/002-dev-deployment-arch/quickstart.md)**
+- **[Cognito 認證測試指南](specs/002-dev-deployment-arch/COGNITO_TESTING.md)**

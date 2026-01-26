@@ -50,16 +50,31 @@ output "ecs_service_name" {
   value       = module.ecs.service_name
 }
 
-# Cognito Outputs (to be added in Phase 5)
-# output "cognito_user_pool_id" {
-#   description = "Cognito User Pool ID"
-#   value       = module.cognito.user_pool_id
-# }
+# Cognito Outputs
+output "cognito_user_pool_id" {
+  description = "Cognito User Pool ID"
+  value       = module.cognito.user_pool_id
+}
 
-# output "cognito_client_id" {
-#   description = "Cognito App Client ID"
-#   value       = module.cognito.client_id
-# }
+output "cognito_app_client_id" {
+  description = "Cognito App Client ID"
+  value       = module.cognito.app_client_id
+}
+
+output "cognito_user_pool_arn" {
+  description = "Cognito User Pool ARN"
+  value       = module.cognito.user_pool_arn
+}
+
+output "cognito_jwks_url" {
+  description = "Cognito JWKS URL for JWT verification"
+  value       = module.cognito.jwks_url
+}
+
+output "cognito_issuer_url" {
+  description = "Cognito Issuer URL for JWT verification"
+  value       = module.cognito.issuer_url
+}
 
 # RDS Outputs
 output "rds_endpoint" {
