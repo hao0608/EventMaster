@@ -84,6 +84,49 @@ module "rds" {
 }
 
 # ============================================================================
+# Cognito Module
+# ============================================================================
+
+module "cognito" {
+  source = "../../modules/cognito"
+
+  user_pool_name      = "${var.project_name}-${var.environment}"
+  environment         = var.environment
+  app_client_name     = "${var.project_name}-web"
+  deletion_protection = false # dev environment
+
+  # MFA disabled for dev
+  mfa_configuration = "OFF"
+
+  # Password policy
+  password_policy = {
+    minimum_length                   = 8
+    require_lowercase                = true
+    require_uppercase                = true
+    require_numbers                  = true
+    require_symbols                  = false
+    temporary_password_validity_days = 7
+  }
+
+  # Token validity
+  token_validity = {
+    access_token  = 1  # hours
+    id_token      = 1  # hours
+    refresh_token = 30 # days
+  }
+
+  # OAuth callback/logout URLs
+  callback_urls = [
+    "https://${var.cloudflare_pages_project}/callback",
+    "http://localhost:5173/callback"
+  ]
+  logout_urls = [
+    "https://${var.cloudflare_pages_project}/logout",
+    "http://localhost:5173/logout"
+  ]
+}
+
+# ============================================================================
 # Secrets Module
 # ============================================================================
 
@@ -101,15 +144,17 @@ module "secrets" {
   db_port     = tostring(module.rds.db_port)
   db_name     = module.rds.db_name
 
-  # Application secrets (Cognito IDs will be updated after Cognito is created)
+  # Application secrets with actual Cognito IDs
   app_secret_key       = random_password.app_secret_key.result
-  cognito_user_pool_id = "pending-cognito-pool"   # Updated in Phase 5 after Cognito creation
-  cognito_client_id    = "pending-cognito-client" # Updated in Phase 5 after Cognito creation
+  cognito_user_pool_id = module.cognito.user_pool_id
+  cognito_client_id    = module.cognito.app_client_id
 
   # CORS configuration - Cloudflare Pages URL will be added after deployment
   allowed_origins = "http://localhost:5173,http://localhost:3000"
 
   tags = var.tags
+
+  depends_on = [module.cognito]
 }
 
 # ============================================================================

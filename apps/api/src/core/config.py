@@ -20,10 +20,31 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./eventmaster.db"
 
-    # JWT Authentication
+    # JWT Authentication (legacy - will be deprecated in favor of Cognito)
     SECRET_KEY: str = "your-secret-key-please-change-in-production"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+
+    # AWS Cognito Configuration
+    COGNITO_USER_POOL_ID: str = ""
+    COGNITO_CLIENT_ID: str = ""
+    COGNITO_REGION: str = "ap-northeast-1"
+
+    @computed_field
+    @property
+    def cognito_jwks_url(self) -> str:
+        """Construct JWKS URL from Cognito settings."""
+        if not self.COGNITO_USER_POOL_ID or not self.COGNITO_REGION:
+            return ""
+        return f"https://cognito-idp.{self.COGNITO_REGION}.amazonaws.com/{self.COGNITO_USER_POOL_ID}/.well-known/jwks.json"
+
+    @computed_field
+    @property
+    def cognito_issuer(self) -> str:
+        """Construct issuer URL from Cognito settings."""
+        if not self.COGNITO_USER_POOL_ID or not self.COGNITO_REGION:
+            return ""
+        return f"https://cognito-idp.{self.COGNITO_REGION}.amazonaws.com/{self.COGNITO_USER_POOL_ID}"
 
     # CORS - can be set as comma-separated string in environment variable
     # Format: comma-separated URLs (e.g., "https://app.pages.dev,https://example.com")
