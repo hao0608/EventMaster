@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Event, UserRole } from '../types';
+import { Event, EventStatus, UserRole } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -65,6 +65,7 @@ export const EventDetail: React.FC = () => {
 
   const isFull = event.registeredCount >= event.capacity;
   const isPast = new Date() > new Date(event.endAt);
+  const isPublished = event.status === EventStatus.PUBLISHED;
   
   // Logic: Can view attendees if Organizer/Admin
   const canViewAttendees = user && (user.role === UserRole.ORGANIZER || user.role === UserRole.ADMIN);
@@ -73,6 +74,36 @@ export const EventDetail: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* Status Warning Banner */}
+      {event.status === EventStatus.PENDING && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <i className="fa-solid fa-clock text-yellow-400"></i>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-yellow-700">
+                <span className="font-bold">此活動正在等待審核</span> - 活動尚未公開，一般用戶無法看到此活動。審核通過後才能開放報名。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      {event.status === EventStatus.REJECTED && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 rounded-r-lg">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <i className="fa-solid fa-circle-xmark text-red-400"></i>
+            </div>
+            <div className="ml-3">
+              <p className="text-sm text-red-700">
+                <span className="font-bold">此活動已被駁回</span> - 活動未通過審核，無法公開或接受報名。請聯繫管理員了解詳情。
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
         <div className="h-48 bg-blue-600 flex items-center justify-center relative">
             <h1 className="text-3xl md:text-4xl font-bold text-white px-4 text-center">{event.title}</h1>
@@ -138,15 +169,15 @@ export const EventDetail: React.FC = () => {
 
                  <button
                    onClick={handleRegister}
-                   disabled={isFull || registering || isPast}
+                   disabled={!isPublished || isFull || registering || isPast}
                    className={`w-full py-3 px-4 rounded-md font-bold text-white shadow-md transition
-                     ${isFull || isPast
-                       ? 'bg-gray-400 cursor-not-allowed' 
+                     ${!isPublished || isFull || isPast
+                       ? 'bg-gray-400 cursor-not-allowed'
                        : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
                      }
                    `}
                  >
-                   {registering ? '處理中...' : isPast ? '活動已結束' : isFull ? '已額滿' : '立即報名'}
+                   {registering ? '處理中...' : !isPublished ? '活動尚未開放報名' : isPast ? '活動已結束' : isFull ? '已額滿' : '立即報名'}
                  </button>
                </div>
 

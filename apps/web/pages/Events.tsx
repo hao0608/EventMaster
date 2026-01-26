@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Event } from '../types';
+import { Event, EventStatus } from '../types';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 
@@ -70,6 +70,16 @@ export const Events: React.FC = () => {
                   <div className="p-6 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-xl font-bold text-gray-900 line-clamp-2">{event.title}</h3>
+                      {event.status === EventStatus.PENDING && (
+                        <span className="ml-2 flex-shrink-0 bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded font-bold">
+                          待審核
+                        </span>
+                      )}
+                      {event.status === EventStatus.REJECTED && (
+                        <span className="ml-2 flex-shrink-0 bg-red-100 text-red-800 text-xs px-2 py-1 rounded font-bold">
+                          已駁回
+                        </span>
+                      )}
                     </div>
                     <p className="text-gray-500 text-sm mb-4 flex-1 line-clamp-3">{event.description}</p>
                     
