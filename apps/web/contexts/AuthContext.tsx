@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { User } from '../types';
+import { User, UserRole } from '../types';
 import { api } from '../services/api';
 import * as cognitoAuth from '../services/cognitoAuth';
 
@@ -13,10 +13,10 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Map Cognito groups to EventMaster roles
-const mapCognitoGroupToRole = (groups: string[]): 'admin' | 'organizer' | 'member' => {
-  if (groups.includes('admin')) return 'admin';
-  if (groups.includes('organizer')) return 'organizer';
-  return 'member';
+const mapCognitoGroupToRole = (groups: string[]): UserRole => {
+  if (groups.includes('admin')) return UserRole.ADMIN;
+  if (groups.includes('organizer')) return UserRole.ORGANIZER;
+  return UserRole.MEMBER;
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
